@@ -1,8 +1,8 @@
 {
-  "suite": "Recon Room release gate",
+  "suite": "Proof Courier release gate",
   "command": "npm run verify",
   "success": true,
-  "generatedAt": "2026-09-01T05:27:18.204Z",
+  "generatedAt": "2026-09-01T11:50:23.444Z",
   "sourceRevision": "local-working-tree",
   "checks": [
     {
@@ -19,11 +19,16 @@
       "name": "judge scenarios",
       "command": "npm run eval",
       "status": "passed",
-      "total": 12
+      "total": 15
     },
     {
       "name": "production build",
       "command": "npm run build",
+      "status": "passed"
+    },
+    {
+      "name": "wallet/verifier bundle isolation",
+      "command": "npm run verify:bundles",
       "status": "passed"
     },
     {
@@ -35,19 +40,34 @@
   ],
   "buildArtifacts": [
     {
-      "path": "dist/assets/index-D7qkSIk3.css",
-      "bytes": 20012,
-      "sha256": "c09dae45dd8c73c8950f0e92cb07087671f78fa0eb0c09ce1973711c21bfc26f"
+      "path": "dist/assets/index-Cds37gTh.css",
+      "bytes": 16570,
+      "sha256": "59ea7d90f6c8432d47989a0061d3d57f33fda0c98c9b8d32efec1cfa6170c806"
     },
     {
-      "path": "dist/assets/index-WHl-i0kw.js",
-      "bytes": 226085,
-      "sha256": "64d9a5a03eb3f4c9cc2fb53487b981f1d21c7dfe27f8d93cfc14cfbd50fd8fb3"
+      "path": "dist/assets/index-Cov1_wQX.js",
+      "bytes": 222001,
+      "sha256": "1d51822daff73e3d896202624571a35799da47d702dc337dd5e538efba5a6c96"
+    },
+    {
+      "path": "dist/assets/verifierWebmcp-CmACXLtZ.js",
+      "bytes": 2996,
+      "sha256": "7d8ce5dc0f563d52d8c3f27c5f1002a4c637001b7634d8bc0e977ffd2b045395"
+    },
+    {
+      "path": "dist/assets/walletWebmcp-yepVDGDk.js",
+      "bytes": 9996,
+      "sha256": "bde94956461d30d4f75c42e1e3d67a30e2ac8fef4f27ae6932a0ab5ec43c5196"
+    },
+    {
+      "path": "dist/assets/webmcpRuntime-C5DDX8SR.js",
+      "bytes": 1214,
+      "sha256": "f1a52a6abcea7ff599f6a5d5629bbf68f44378ca292e872439fcdf3e0f36dd43"
     },
     {
       "path": "dist/index.html",
-      "bytes": 570,
-      "sha256": "b886e56b378a169aef3021140cac76bb799b034ba104dd78fae21c2b3bc709ec"
+      "bytes": 634,
+      "sha256": "fae501f4d81be68e2838a35eff541363bf987787fbdd9048cbd9c43476fcb4ad"
     }
   ]
 }

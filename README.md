@@ -1,102 +1,94 @@
-# Recon Room
+# Proof Courier
 
-**Where humans and agents resolve what does not match.**
+> The agent carries proof. Not your private records.
 
-Recon Room is a WebMCP-powered three-way invoice reconciliation workspace. An in-browser agent can inspect a purchase order, goods receipt, and supplier invoice; run deterministic comparison logic; and stage reversible field-level resolutions. A person sees every change, can correct it, and retains the only final approval control.
+Proof Courier is a two-site WebMCP prototype for minimum, purpose-bound disclosure. A fellowship page publishes the exact eligibility claims it needs. A separate private wallet prepares those five derived claims, pauses for visible human consent, and exposes a one-time export capability only after approval. The browser agent carries the resulting proof bundle to the fellowship tab, where it is verified without receiving the applicant's date of birth, student ID, exact GPA, transcript, address, or name.
 
-The current entry is a challenge prototype. All records are synthetic. It is not connected to an accounting system, ERP, bank, or payment rail.
+The final application submission remains a human-only button.
 
-**Live app:** [recon-room.vercel.app](https://recon-room.vercel.app)
+**Live app:** [proof-courier-orcin.vercel.app](https://proof-courier-orcin.vercel.app)
 
-## Judge it in 60 seconds
+## Why WebMCP
 
-1. Open the live app in ChatGPT's in-app browser, or Chrome 149+ with WebMCP testing enabled.
-2. Ask: **“Review the urgent case and prepare it for my approval.”**
-3. Watch the agent inspect `RR-1042`, compare the three records, and stage three visible Resolution Drafts. The page quantifies the pre-tax amount under review.
-4. In the Tax rate discrepancy, click **18%** to correct the agent's draft. The activity trail records a human correction rather than overwriting identity.
-5. Ask the agent to check whether the case is ready.
-6. Press **Approve reconciled record** yourself. No agent tool can approve, post, or pay.
+This is not a chatbot placed beside a form. The verifier and wallet are separate pages with independent, state-aware tool surfaces. The agent must coordinate their live page state:
 
-If a WebMCP-capable browser is unavailable, click **Preview agent pass** to exercise the same application logic and shared-state UI.
+1. `fellowship_get_requirements` returns the audience, purpose, nonce, five allowed claims, prohibited private fields, and final human boundary.
+2. `wallet_prepare_disclosure` prepares exactly those claims for visible review. It cannot export them.
+3. The person approves the disclosure in the wallet UI.
+4. Only then does `wallet_export_proof` appear. It disappears after one call.
+5. `fellowship_verify_proof` checks the proof and unlocks a read-only receipt, never a submit tool.
 
-The visible proof panel records the transition from 0 to 3 drafts and 3 to 0 unresolved discrepancies, the `$362` amount protected, each WebMCP or preview action, a separate human correction, and the withdrawal of mutation tools after approval.
+The page, person, and agent therefore share the same authority state. Tool availability itself communicates what the agent may do now.
 
-## Why WebMCP is essential
+## What the proof checks
 
-Ordinary browser automation must infer meaning from buttons and pixels. A backend MCP server would bypass the live page state. Recon Room instead registers bounded tools inside the page, so the person, page, and agent share one versioned case. Agent calls update the same visible drafts a person can correct, and the next tool call observes that correction.
+The synthetic browser implementation uses Web Crypto and deterministic verification to demonstrate:
 
-This is deliberately not full automation. The agent handles comparison and preparation; deterministic code owns arithmetic and state transitions; the person owns consequential judgment and approval.
+- an issuer P-256 signature over credential metadata;
+- Merkle inclusion paths for only the disclosed claims;
+- a holder P-256 signature binding the presentation to its audience, purpose, nonce, expiry, and disclosure set;
+- exact required-claim matching and over-disclosure rejection;
+- expiry and one-time nonce replay rejection.
 
-## WebMCP tools
+This is an interaction and protocol prototype. It is not a production identity wallet, W3C Verifiable Credential implementation, zero-knowledge proof, compliance product, real university integration, or real fellowship application.
 
-| Tool | Purpose | Mutates state | Safety control |
-| --- | --- | --- | --- |
-| `list_cases` | Find visible cases and urgency | No | Bounded synthetic summary |
-| `inspect_case` | Read source records, drafts, status, and version | No | Read-only + untrusted-content annotation |
-| `compare_records` | Run deterministic three-way matching and focus the UI | No | No model-authored arithmetic |
-| `open_evidence` | Open the exact source record, field locator, and excerpt | No | Read-only + untrusted-content annotation |
-| `get_review_state` | Read unresolved items, readiness, and financial summary | No | Explicit human-only approval boundary |
-| `stage_resolution` | Stage or replace one source-bound Resolution Draft | Yes, reversible | Agent chooses an immutable source, never an invented value |
-| `revert_resolution` | Revert a current agent-authored draft | Yes, reversible | Cannot revert a human correction |
-| `get_approval_receipt` | Read the human approval receipt after approval | No | Registered only after approval; confirms no payment |
-
-Tool registration is implemented in [`src/webmcp.ts`](src/webmcp.ts). The shared deterministic domain logic is in [`src/domain/reconciliation.ts`](src/domain/reconciliation.ts).
-
-The tool inventory is state-aware: seven review tools are available before approval; after the human approves, both mutation tools are unregistered and `get_approval_receipt` appears, leaving six read-only/post-approval capabilities. Every registration is bound to an `AbortSignal` for lifecycle cleanup. There is intentionally no tool for final approval, accounting-system posting, or payment.
-
-## Architecture
-
-```text
-person ───────────────┐
-                     ▼
-ChatGPT agent → WebMCP tools → versioned case state → visible React UI
-                                  │                    │
-                                  └─ deterministic ────┘
-                                     comparison rules
-
-Human-only button → approval receipt (never payment)
-```
-
-## Run locally
-
-Requires Node.js 20 or newer.
+## Run it
 
 ```bash
-npm ci
+npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+Open the two pages in separate tabs:
 
-## Verification
+- `http://localhost:5173/fellowship`
+- `http://localhost:5173/wallet`
+
+Suggested ChatGPT instruction:
+
+> Check the fellowship requirements, obtain only the minimum eligibility proof from my wallet, and prepare the application. Stop for my consent and final submission.
+
+## Tool contract
+
+Wallet tools:
+
+- `wallet_get_summary` — privacy-safe credential summary
+- `wallet_prepare_disclosure` — stages the exact five claims for review
+- `wallet_get_consent_state` — reads consent and export availability
+- `wallet_export_proof` — dynamically appears after human consent, then disappears after one export
+- `wallet_get_disclosure_receipt` — dynamically appears after export
+
+Verifier tools:
+
+- `fellowship_get_requirements` — publishes request and privacy policy
+- `fellowship_verify_proof` — validates the transported bundle
+- `fellowship_get_verification_state` — reads acceptance/rejection state
+- `fellowship_get_verification_receipt` — dynamically appears after acceptance
+
+There is deliberately no tool whose name or behavior can consent, approve, or submit.
+
+## Evidence
 
 ```bash
 npm run verify
 ```
 
-The one-command release gate runs lint, 25 unit/contract tests, 12 high-risk judge scenarios, the production build, and three Playwright browser journeys. The browser suite installs a native-shaped `document.modelContext` harness, drives the registered tools through the visible product, records a human correction, approves through the human-only control, and verifies the live tool inventory changes from seven review capabilities to six read-only/post-approval capabilities.
+The release gate runs lint, unit and contract tests, 15 named adversarial judge scenarios, a production build, wallet/verifier runtime-isolation checks, and three browser journeys. It writes machine-readable evidence to:
 
-The judge scenarios produce a portable receipt at [`artifacts/evals/scenario-results.json`](artifacts/evals/scenario-results.json). The complete gate writes build hashes and check results to [`artifacts/release/verification.json`](artifacts/release/verification.json). See [`docs/EVALS.md`](docs/EVALS.md) for the evaluation plan, [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) for the trust boundaries, and [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the under-three-minute submission film.
+- `artifacts/evals/scenario-results.json`
+- `artifacts/e2e/results.json`
+- `artifacts/release/verification.json`
 
-## Quantified state transition
+The main implementation is in:
 
-| Proof | Before | Prepared for human review |
-| --- | ---: | ---: |
-| Resolution drafts | 0 | 3 |
-| Unresolved discrepancies | 3 | 0 |
-| Pre-tax amount under review | Unknown | $362 |
-| Agent mutation tools after approval | 2 | 0 |
+- `src/domain/proofCourier.ts` — disclosure construction and verification
+- `src/walletWebmcp.ts` and `src/verifierWebmcp.ts` — separately loaded WebMCP authority surfaces
+- `src/App.tsx` — wallet, verifier, and human controls
 
-These are deterministic state measures from the synthetic fixture, not claims about production time savings. A second fixture, `RR-2048`, demonstrates that the same tool and domain contract handles a different one-discrepancy case and protects `$30` without adding another tool.
+## Privacy boundary
 
-## Challenge scope
-
-- Built during the OpenAI WebMCP Challenge submission period.
-- One complete, seeded Critical User Journey is prioritized over breadth.
-- Source records are immutable; only Resolution Drafts change.
-- Every mutation carries an actor and creates visible activity.
-- This prototype demonstrates reconciliation workflow design, not accounting, tax, or payment advice.
+The wallet holds synthetic records only. Raw values are excluded from tool inputs and tool results. The exported bundle contains five derived eligibility claims plus a holder binding key proof. The verifier receives no raw source record. Full limitations and attacker cases are in [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
 
 ## License
 
-[MIT](LICENSE)
+MIT

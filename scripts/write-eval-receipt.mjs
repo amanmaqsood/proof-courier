@@ -9,7 +9,7 @@ const scenarios = raw.testResults.flatMap((suite) => suite.assertionResults.map(
   status: assertion.status,
 })))
 const receipt = {
-  suite: 'Recon Room judge scenarios',
+  suite: 'Proof Courier adversarial judge scenarios',
   command: 'npm run eval',
   success: raw.success,
   passed: raw.numPassedTests,

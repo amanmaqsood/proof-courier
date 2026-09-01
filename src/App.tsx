@@ -1,472 +1,389 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  ArrowRight,
-  Bot,
+  BadgeCheck,
+  Ban,
   Check,
-  CheckCircle2,
   ChevronRight,
-  CircleAlert,
-  FileCheck2,
-  FileText,
+  CircleDot,
+  ClipboardCheck,
+  ExternalLink,
   Fingerprint,
+  KeyRound,
   LockKeyhole,
+  PackageCheck,
   RotateCcw,
-  Scale,
+  Route,
+  Send,
+  ShieldCheck,
   Sparkles,
-  UserRound,
-  Undo2,
-  ScanSearch,
-  X,
+  Stamp,
+  UserRoundCheck,
+  Vault,
 } from 'lucide-react'
 import {
-  approveCase,
-  compareCase,
-  createSeedCase,
-  getFinancialSummary,
-  getEvidence,
-  getReviewState,
-  revertResolution,
-  stageResolution,
-  type Actor,
-  type Discrepancy,
-  type EvidenceSource,
-  type ReconciliationCase,
-  type SourceRecord,
-} from './domain/reconciliation'
-import { registerReconRoomTools, type ToolTraceEvent } from './webmcp'
+  SCHOLARSHIP_AUDIENCE,
+  SCHOLARSHIP_PURPOSE,
+  getScholarshipRequest,
+  scholarshipRequirements,
+} from './domain/proofVerifier'
+import {
+  consentToWalletDraft,
+  createVerifierState,
+  createWalletState,
+  revokeWalletDraft,
+  submitVerifiedApplication,
+  type ProofTraceEvent,
+  type VerifierState,
+  type WalletState,
+} from './proofState'
 
-const money = (value: number) => `$${value.toFixed(2)}`
-
-const recordLabels: Record<SourceRecord['type'], { eyebrow: string; title: string }> = {
-  purchase_order: { eyebrow: 'What we ordered', title: 'Purchase order' },
-  goods_receipt: { eyebrow: 'What arrived', title: 'Goods receipt' },
-  supplier_invoice: { eyebrow: 'What they billed', title: 'Supplier invoice' },
-}
-
-function formatValue(field: Discrepancy['field'], value: number | null) {
-  if (value === null) return '—'
-  if (field === 'unitPrice') return money(value)
-  if (field === 'taxRate') return `${value}%`
-  return String(value)
-}
-
-function DocumentCard({ record }: { record: SourceRecord }) {
-  const label = recordLabels[record.type]
-  return (
-    <article className="document-card">
-      <div className="document-topline">
-        <span className="document-icon"><FileText size={16} /></span>
-        <span>{record.reference}</span>
-      </div>
-      <p className="eyebrow">{label.eyebrow}</p>
-      <h3>{label.title}</h3>
-      <dl>
-        <div><dt>Quantity</dt><dd>{record.quantity}</dd></div>
-        <div><dt>Unit price</dt><dd>{record.unitPrice === null ? 'Not recorded' : money(record.unitPrice)}</dd></div>
-        <div><dt>Tax</dt><dd>{record.taxRate === null ? 'Not recorded' : `${record.taxRate}%`}</dd></div>
-      </dl>
-      {record.supplierNote && <div className="quarantined-note"><CircleAlert size={12} /> Untrusted supplier note quarantined</div>}
-      <p className="document-date">Issued {record.issuedAt}</p>
-    </article>
-  )
-}
-
-function DiscrepancyRow({
-  discrepancy,
-  caseState,
-  active,
-  onResolve,
-  onRevert,
-  onEvidence,
-}: {
-  discrepancy: Discrepancy
-  caseState: ReconciliationCase
-  active: boolean
-  onResolve: (discrepancy: Discrepancy, source: EvidenceSource, actor: Actor) => void
-  onRevert: (discrepancy: Discrepancy) => void
-  onEvidence: (discrepancy: Discrepancy, source: EvidenceSource) => void
-}) {
-  const draft = caseState.drafts[discrepancy.id]
-  const sources = [
-    ['PO', discrepancy.values.purchaseOrder, 'purchaseOrder'],
-    ['Receipt', discrepancy.values.goodsReceipt, 'goodsReceipt'],
-    ['Invoice', discrepancy.values.invoice, 'invoice'],
-  ] as const
-  const options = sources.reduce<Array<{ value: number; source: EvidenceSource }>>((result, [, value, source]) => {
-    if (value !== null && !result.some((option) => option.value === value)) result.push({ value, source })
-    return result
-  }, [])
-
-  return (
-    <article id={discrepancy.id} className={`discrepancy-row ${active ? 'is-active' : ''} ${draft ? 'is-resolved' : ''}`}>
-      <div className="discrepancy-heading">
-        <div>
-          <span className={`severity ${discrepancy.severity}`}><CircleAlert size={13} /> {discrepancy.severity}</span>
-          <h3>{discrepancy.label}</h3>
-        </div>
-        {draft && <span className="resolved-badge"><Check size={14} /> Drafted</span>}
-      </div>
-      <div className="source-values" role="group" aria-label={`Source values for ${discrepancy.label}`}>
-        {sources.map(([label, value, source]) => (
-          <button key={label} type="button" disabled={value === null} onClick={() => onEvidence(discrepancy, source)} className={draft?.selectedValue === value ? 'selected-source' : ''}>
-            <span>{label}</span>
-            <strong>{formatValue(discrepancy.field, value)}</strong>
-            {value !== null && <ScanSearch size={12} />}
-          </button>
-        ))}
-      </div>
-      <p className="guidance">{discrepancy.guidance}</p>
-      {draft ? (
-        <div className="draft-line">
-          <span className={`actor-mark ${draft.actor}`}>
-            {draft.actor === 'agent' ? <Bot size={15} /> : <UserRound size={15} />}
-          </span>
-          <div>
-            <strong>{draft.actor === 'agent' ? 'Agent draft' : 'Human correction'} · {formatValue(discrepancy.field, draft.selectedValue)}</strong>
-            <p>{draft.reason}</p>
-          </div>
-          <button className="undo-draft" type="button" onClick={() => onRevert(discrepancy)} title="Clear this draft" aria-label={`Clear ${discrepancy.label} draft`}>
-            <Undo2 size={14} />
-          </button>
-        </div>
-      ) : null}
-      <div className="choice-row">
-        <span>{draft ? 'Correct draft:' : 'Resolve manually:'}</span>
-        {options.map(({ value, source }) => (
-          <button key={`${source}-${value}`} type="button" onClick={() => onResolve(discrepancy, source, 'human')} className={draft?.selectedValue === value ? 'chosen' : ''}>
-            {formatValue(discrepancy.field, value)}
-          </button>
-        ))}
-      </div>
-    </article>
-  )
-}
+type ToolStatus = { supported: boolean; toolNames: string[] }
+type ToolManagerRef = ToolStatus & { sync: () => ToolStatus; dispose: () => void }
+type Trace = ProofTraceEvent & { id: number }
+type WalletStatus = 'no_request' | 'prepared' | 'consented' | 'exported' | 'revoked'
 
 function App() {
-  const [caseState, setCaseState] = useState(createSeedCase)
-  const caseRef = useRef(caseState)
-  const toolsManagerRef = useRef<ReturnType<typeof registerReconRoomTools> | null>(null)
-  const [activeDiscrepancy, setActiveDiscrepancy] = useState<string>()
-  const [tools, setTools] = useState<{ supported: boolean; toolNames: string[] }>({ supported: false, toolNames: [] })
-  const [demoRunning, setDemoRunning] = useState(false)
-  const traceSequence = useRef(0)
-  const [traceEvents, setTraceEvents] = useState<Array<ToolTraceEvent & { id: string }>>([])
-  const [evidenceSelection, setEvidenceSelection] = useState<{ discrepancyId: string; source: EvidenceSource } | null>(null)
-  const discrepancies = compareCase(caseState)
-  const review = getReviewState(caseState)
-  const financial = getFinancialSummary(caseState)
-  const evidence = evidenceSelection
-    ? getEvidence(caseState, evidenceSelection.discrepancyId, evidenceSelection.source)
-    : null
-  const humanCorrections = Object.values(caseState.drafts).filter((draft) => draft.actor === 'human').length
+  const path = window.location.pathname.replace(/\/+$/u, '') || '/'
+  if (path === '/wallet') return <WalletPage />
+  if (path === '/fellowship') return <FellowshipPage />
+  return <LandingPage />
+}
 
-  const appendTrace = useCallback((event: ToolTraceEvent) => {
-    traceSequence.current += 1
-    const id = `trace-${traceSequence.current}`
-    setTraceEvents((current) => [...current, { ...event, id }].slice(-20))
-  }, [])
-
-  useEffect(() => {
-    caseRef.current = caseState
-    if (toolsManagerRef.current) setTools(toolsManagerRef.current.sync(caseState))
-  }, [caseState])
-
-  useEffect(() => {
-    const registration = registerReconRoomTools({
-      getCase: () => caseRef.current,
-      setCase: (next) => {
-        caseRef.current = next
-        setCaseState(next)
-      },
-      focusDiscrepancy: (id) => {
-        setActiveDiscrepancy(id)
-        if (id) window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80)
-      },
-      openEvidence: (discrepancyId, source) => setEvidenceSelection({ discrepancyId, source }),
-      recordTrace: appendTrace,
-    })
-    toolsManagerRef.current = registration
-    setTools(registration)
-    return () => {
-      toolsManagerRef.current = null
-      registration.dispose()
-    }
-  }, [appendTrace])
-
-  function resolve(discrepancy: Discrepancy, source: EvidenceSource, actor: Actor, reason?: string) {
-    const result = stageResolution(caseRef.current, {
-      discrepancyId: discrepancy.id,
-      selectedSource: source,
-      reason: reason ?? `Human reviewed ${discrepancy.label.toLowerCase()} against the three source records.`,
-      actor,
-      expectedVersion: caseRef.current.version,
-    })
-    caseRef.current = result.case
-    setCaseState(result.case)
-    appendTrace({
-      toolName: actor === 'human' ? 'human_correction' : 'stage_resolution',
-      channel: actor === 'human' ? 'human' : 'preview',
-      status: 'succeeded',
-      summary: result.receipt.message,
-      createdAt: new Date().toISOString(),
-    })
-    setActiveDiscrepancy(discrepancy.id)
-  }
-
-  function revert(discrepancy: Discrepancy) {
-    const result = revertResolution(caseRef.current, {
-      discrepancyId: discrepancy.id,
-      actor: 'human',
-      expectedVersion: caseRef.current.version,
-    })
-    caseRef.current = result.case
-    setCaseState(result.case)
-    appendTrace({ toolName: 'human_revert', channel: 'human', status: 'succeeded', summary: result.receipt.message, createdAt: new Date().toISOString() })
-    setActiveDiscrepancy(discrepancy.id)
-  }
-
-  async function runGuidedDemo() {
-    if (demoRunning) return
-    setDemoRunning(true)
-    setTraceEvents([])
-    let next = createSeedCase()
-    setCaseState(next)
-    appendTrace({ toolName: 'preview_goal', channel: 'preview', status: 'succeeded', summary: 'Goal: prepare RR-1042 for human approval without approving or paying.', createdAt: new Date().toISOString() })
-    appendTrace({ toolName: 'list_cases → inspect_case → compare_records', channel: 'preview', status: 'succeeded', summary: 'Inspected version 1 and found 3 source-backed discrepancies.', createdAt: new Date().toISOString() })
-    const suggestions = [
-      ['qty-001', 'goodsReceipt', 'Use the quantity physically received; two chairs remain outstanding.'],
-      ['price-001', 'purchaseOrder', 'Use the contracted purchase-order price; no authorized increase is attached.'],
-      ['tax-001', 'invoice', 'Use the supplier invoice tax rate as a review draft.'],
-    ] as const
-    for (const [id, source, reason] of suggestions) {
-      await new Promise((resolveDelay) => window.setTimeout(resolveDelay, 500))
-      const discrepancy = compareCase(next).find((item) => item.id === id)!
-      next = stageResolution(next, {
-        discrepancyId: id,
-        selectedSource: source,
-        reason,
-        actor: 'agent',
-        expectedVersion: next.version,
-      }).case
-      caseRef.current = next
-      setCaseState(next)
-      setActiveDiscrepancy(discrepancy.id)
-      appendTrace({ toolName: 'stage_resolution', channel: 'preview', status: 'succeeded', summary: `Drafted ${discrepancy.label} from ${source}; case is now version ${next.version}.`, createdAt: new Date().toISOString() })
-    }
-    appendTrace({ toolName: 'get_review_state', channel: 'preview', status: 'succeeded', summary: '0 unresolved. Ready for human-only approval. $362.00 is under review.', createdAt: new Date().toISOString() })
-    setDemoRunning(false)
-  }
-
-  function reset() {
-    const seed = createSeedCase()
-    caseRef.current = seed
-    setCaseState(seed)
-    setActiveDiscrepancy(undefined)
-    setEvidenceSelection(null)
-    setTraceEvents([])
-  }
-
-  function approve() {
-    const result = approveCase(caseRef.current, 'human')
-    caseRef.current = result.case
-    setCaseState(result.case)
-    const synced = toolsManagerRef.current?.sync(result.case)
-    if (synced) setTools(synced)
-    appendTrace({ toolName: 'human_approval', channel: 'human', status: 'succeeded', summary: result.receipt.message, createdAt: new Date().toISOString() })
-    appendTrace({ toolName: 'capability_withdrawal', channel: 'webmcp', status: 'succeeded', summary: 'stage_resolution and revert_resolution withdrawn; approval receipt exposed read-only.', createdAt: new Date().toISOString() })
-  }
-
+function Brand({ context }: { context?: string }) {
   return (
-    <div className="app-shell">
-      <header className="topbar">
-        <a className="brand" href="#top" aria-label="Recon Room home">
-          <span className="brand-mark"><Scale size={19} /></span>
-          <span><strong>Recon Room</strong><small>Exception review</small></span>
-        </a>
-        <div className="system-status">
-          <details className={`webmcp-status ${tools.supported ? 'connected' : ''}`}>
-            <summary>
-              <Fingerprint size={16} />
-              <span>{tools.supported ? 'WebMCP connected' : 'WebMCP ready'}</span>
-              <small>{tools.supported ? `${tools.toolNames.length} tools` : 'Open in ChatGPT or Chrome 149+'}</small>
-              <ChevronRight className="tool-chevron" size={13} />
-            </summary>
-            {tools.supported && <div className="tool-popover"><span>Active capabilities</span><ul>{tools.toolNames.map((name) => <li key={name}>{name}</li>)}</ul></div>}
-          </details>
-          <div className="eval-status"><CheckCircle2 size={14} /><span><strong>12/12 scenarios</strong><small>verified</small></span></div>
-        </div>
-        <button className="reset-button" type="button" onClick={reset}><RotateCcw size={15} /> Reset case</button>
+    <a className="brand" href="/">
+      <span className="brand-stamp"><Send size={17} /></span>
+      <span><strong>Proof Courier</strong>{context && <small>{context}</small>}</span>
+    </a>
+  )
+}
+
+function LandingPage() {
+  return (
+    <div className="site-shell landing-shell">
+      <header className="site-header">
+        <Brand context="WebMCP consent relay" />
+        <span className="prototype-note">Synthetic challenge prototype</span>
       </header>
 
-      <main id="top">
-        <section className="hero">
-          <div className="hero-main">
-            <p className="eyebrow"><Sparkles size={13} /> Evidence review for browser agents</p>
-            <h1>Reconcile the exception.<br /><em>Keep approval human.</em></h1>
-            <p>Three business records disagree. The agent prepares source-bound drafts; the person makes the consequential call.</p>
+      <main>
+        <section className="landing-hero">
+          <div className="hero-copy">
+            <p className="eyebrow"><Sparkles size={14} /> A private-data handoff for browser agents</p>
+            <h1>The agent carries proof.<br /><em>Not your private records.</em></h1>
+            <p className="hero-lede">A fellowship website asks for eligibility. A separate wallet releases five minimum claims only after the person approves the audience, purpose, and expiry.</p>
+            <div className="hero-actions">
+              <a className="primary-action" href="/fellowship" target="_blank">Open verifier <ExternalLink size={15} /></a>
+              <a className="secondary-action" href="/wallet" target="_blank">Open private wallet <ExternalLink size={15} /></a>
+            </div>
           </div>
-          <div className="hero-action">
-            <span className="hero-action-label">Judge prompt</span>
-            <div className="prompt-card">
-              <Bot size={18} />
-              <strong>“Review the urgent case and prepare it for my approval.”</strong>
+
+          <div className="proof-route" aria-label="Private wallet to agent to verifier flow">
+            <article className="route-node private-node">
+              <span className="node-icon"><Vault size={20} /></span>
+              <p>Private side</p>
+              <h2>Credential wallet</h2>
+              <ul><li>Birth date stays</li><li>Exact GPA stays</li><li>Address stays</li></ul>
+            </article>
+            <div className="route-courier">
+              <div className="route-line" />
+              <span><Send size={19} /></span>
+              <strong>5 claims</strong>
+              <small>purpose-bound</small>
             </div>
-            <div className="hero-proof">
-              <span><strong>3</strong> immutable sources</span>
-              <span><strong>7 → 6</strong> state-aware tools</span>
-              <span><strong>Human</strong> final authority</span>
-            </div>
+            <article className="route-node verifier-node">
+              <span className="node-icon"><BadgeCheck size={20} /></span>
+              <p>Requesting side</p>
+              <h2>Fellowship verifier</h2>
+              <ul><li>Issuer checked</li><li>Audience checked</li><li>Replay blocked</li></ul>
+            </article>
           </div>
         </section>
 
-        <section className="workspace" aria-label="Reconciliation workspace">
-          <div className="case-main">
-            <div className="case-header">
-              <div>
-                <div className="case-kicker"><span className="urgent">Urgent</span><span>{caseState.id}</span><span>·</span><span>{caseState.dueLabel}</span></div>
-                <h2>{caseState.vendor}</h2>
-                <p>{caseState.item} <span>·</span> Version {caseState.version} <span>·</span> {review.unresolvedCount} unresolved</p>
-              </div>
-              <button className="agent-demo" type="button" onClick={runGuidedDemo} disabled={demoRunning}>
-                <Bot size={17} /> {demoRunning ? 'Agent is drafting…' : 'Preview agent pass'}
-              </button>
-            </div>
+        <section className="thesis-strip" aria-label="Proof Courier principles">
+          <div><strong>2 tabs</strong><span>independent page tools</span></div>
+          <div><strong>5 claims</strong><span>minimum disclosure</span></div>
+          <div><strong>0 records</strong><span>copied into chat</span></div>
+          <div><strong>Human</strong><span>consent and submission</span></div>
+        </section>
 
-            <div className="source-heading"><span>Source records</span><small><LockKeyhole size={13} /> Immutable evidence</small></div>
-            <div className="document-grid">
-              {caseState.records.map((record) => <DocumentCard key={record.id} record={record} />)}
-            </div>
-
-            <div className={`financial-impact ${financial.complete ? 'is-calculated' : ''}`}>
-              <div><span>Supplier billed, pre-tax</span><strong>{money(financial.invoiceSubtotal)}</strong></div>
-              <ArrowRight size={17} />
-              <div><span>Resolved subtotal</span><strong>{financial.resolvedSubtotal === null ? 'Awaiting drafts' : money(financial.resolvedSubtotal)}</strong></div>
-              <div className="exposure-amount">
-                <span>Amount under review</span>
-                <strong>{financial.amountUnderReview === null ? '—' : money(financial.amountUnderReview)}</strong>
-              </div>
-            </div>
-
-            <div className="section-heading">
-              <div><p className="eyebrow">Deterministic comparison</p><h2>{discrepancies.length} discrepancies need judgment</h2></div>
-              <span><LockKeyhole size={14} /> Source records stay immutable</span>
-            </div>
-
-            <div className="discrepancy-list">
-              {discrepancies.map((discrepancy) => (
-                <DiscrepancyRow
-                  key={discrepancy.id}
-                  discrepancy={discrepancy}
-                  caseState={caseState}
-                  active={activeDiscrepancy === discrepancy.id}
-                  onResolve={resolve}
-                  onRevert={revert}
-                  onEvidence={(discrepancy, source) => {
-                    setActiveDiscrepancy(discrepancy.id)
-                    setEvidenceSelection({ discrepancyId: discrepancy.id, source })
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          <aside className="review-panel">
-            <div className="review-summary">
-              <p className="eyebrow">Approval boundary</p>
-              <div className="readiness-ring" style={{ '--progress': `${((3 - review.unresolvedCount) / 3) * 100}%` } as React.CSSProperties}>
-                <div><strong>{3 - review.unresolvedCount}/3</strong><span>drafted</span></div>
-              </div>
-              <h2>{caseState.status === 'approved' ? 'Case approved' : review.readyForHumanApproval ? 'Ready for your review' : 'Still needs resolution'}</h2>
-              <p>{caseState.status === 'approved' ? 'A human approval receipt was created. No payment was initiated.' : 'The agent can prepare every field. Only you can approve the reconciled record.'}</p>
-              <button className="approve-button" type="button" disabled={!review.readyForHumanApproval} onClick={approve}>
-                {caseState.status === 'approved' ? <><CheckCircle2 size={18} /> Approved by Aman</> : <><FileCheck2 size={18} /> Approve reconciled record</>}
-              </button>
-              {caseState.status === 'approved' && <div className="receipt-id">Receipt · {caseState.id}-v{caseState.version}</div>}
-              <div className="no-payment"><LockKeyhole size={14} /> Approval does not post or pay</div>
-            </div>
-
-            <div className="review-evidence-column">
-              <div className="proof-snapshot">
-                <div className="activity-heading"><h3>Live proof</h3><span>Before → now</span></div>
-                <div className="proof-grid">
-                  <div><strong>0 → {Object.keys(caseState.drafts).length}</strong><span>drafts</span></div>
-                  <div><strong>3 → {review.unresolvedCount}</strong><span>unresolved</span></div>
-                  <div><strong>{humanCorrections}</strong><span>human corrections</span></div>
-                  <div><strong>{financial.amountUnderReview === null ? '—' : money(financial.amountUnderReview)}</strong><span>guarded</span></div>
-                </div>
-              </div>
-
-              <div className="trace-panel">
-                <div className="activity-heading"><h3>Agent trace</h3><span>{traceEvents.length}</span></div>
-                {traceEvents.length === 0 ? (
-                  <div className="empty-activity"><Bot size={18} /><p>Use ChatGPT or Preview agent pass to expose tool calls, recoveries, and handoffs.</p></div>
-                ) : (
-                  <ol className="trace-list" tabIndex={0} aria-label="Agent tool trace, newest first">
-                    {[...traceEvents].reverse().map((event) => (
-                      <li key={event.id}>
-                        <div><span className={`trace-channel ${event.channel}`}>{event.channel}</span><strong>{event.toolName}</strong></div>
-                        <p className={event.status === 'blocked' ? 'trace-blocked' : ''}>{event.summary}</p>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </div>
-
-              <div className="activity-panel">
-                <div className="activity-heading"><h3>Shared activity</h3><span>{caseState.activity.length}</span></div>
-                {caseState.activity.length === 0 ? (
-                  <div className="empty-activity"><ArrowRight size={18} /><p>Agent drafts and human corrections will appear here with separate identities.</p></div>
-                ) : (
-                  <ol>
-                    {[...caseState.activity].reverse().map((event) => (
-                      <li key={event.id}>
-                        <span className={`actor-mark ${event.actor}`}>{event.actor === 'agent' ? <Bot size={14} /> : <UserRound size={14} />}</span>
-                        <div><strong>{event.actor === 'agent' ? 'Recon agent' : 'Aman'}</strong><p>{event.message}</p></div>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </div>
-            </div>
-          </aside>
+        <section className="journey-section">
+          <div><p className="section-kicker">Judge prompt</p><h2>One goal. Two sites. One visible consent boundary.</h2></div>
+          <div className="prompt-ticket"><span>Ask ChatGPT</span><p>“Check the fellowship requirements, obtain only the minimum eligibility proof from my wallet, and prepare the application. Stop for my consent and final submission.”</p></div>
+          <ol className="journey-steps">
+            <li><span>01</span><strong>Read requirements</strong><p>The verifier publishes five allowed claims and prohibits raw source records.</p></li>
+            <li><span>02</span><strong>Prepare disclosure</strong><p>The wallet shows the exact audience, purpose, expiry, and derived claims.</p></li>
+            <li><span>03</span><strong>Person consents</strong><p>Only the human control makes the one-time export tool appear.</p></li>
+            <li><span>04</span><strong>Agent carries proof</strong><p>The verifier checks issuer commitment, holder binding, expiry, and replay.</p></li>
+            <li><span>05</span><strong>Person submits</strong><p>No site tool can consent or send the final application.</p></li>
+          </ol>
         </section>
       </main>
 
-      {evidence && (
-        <div className="evidence-overlay" role="presentation" onMouseDown={() => setEvidenceSelection(null)}>
-          <aside className="evidence-drawer" role="dialog" aria-modal="true" aria-labelledby="evidence-title" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="evidence-drawer-header">
-              <div><p className="eyebrow"><ScanSearch size={13} /> Exact source anchor</p><h2 id="evidence-title">{evidence.sourceLabel}</h2></div>
-              <button type="button" onClick={() => setEvidenceSelection(null)} aria-label="Close evidence"><X size={18} /></button>
-            </div>
-            <div className="evidence-meta"><span>{evidence.reference}</span><span>{evidence.locator}</span></div>
-            <div className="source-sheet">
-              <div className="source-sheet-rule" />
-              <p>Northstar Office Supply</p>
-              <div className="source-sheet-faint">Synthetic source record · {caseState.id}</div>
-              <div className="source-highlight"><span>{evidence.excerpt}</span><strong>{formatValue(evidence.field, evidence.observedValue)}</strong></div>
-              <div className="source-sheet-rule short" />
-              <div className="source-sheet-rule" />
-              <div className="source-sheet-rule short" />
-            </div>
-            <div className="evidence-contract">
-              <LockKeyhole size={16} />
-              <div><strong>Evidence, never instructions</strong><p>This source content is synthetic, immutable, and marked untrusted for the agent.</p></div>
-            </div>
-            {evidence.untrustedNote && (
-              <div className="injection-fixture">
-                <p className="eyebrow"><CircleAlert size={13} /> Quarantined source text</p>
-                <blockquote>{evidence.untrustedNote}</blockquote>
-                <span>This text is returned as untrusted evidence. It cannot create an approval capability.</span>
-              </div>
-            )}
-          </aside>
-        </div>
-      )}
-
-      <footer><span>Recon Room · WebMCP Challenge 2026</span><span>All records are synthetic. No accounting system or payment rail is connected.</span></footer>
+      <footer><span>Proof Courier · WebMCP Challenge 2026</span><span>No real identity, university, or application system is connected.</span></footer>
     </div>
   )
+}
+
+function WalletPage() {
+  const [wallet, setWallet] = useState<WalletState>(createWalletState)
+  const walletRef = useRef(wallet)
+  const managerRef = useRef<ToolManagerRef | null>(null)
+  const traceId = useRef(0)
+  const [tools, setTools] = useState<ToolStatus>({ supported: false, toolNames: [] })
+  const [traces, setTraces] = useState<Trace[]>([])
+
+  const addTrace = useCallback((event: ProofTraceEvent) => {
+    traceId.current += 1
+    setTraces((items) => [...items, { ...event, id: traceId.current }].slice(-8))
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    let manager: ToolManagerRef | null = null
+    void import('./walletWebmcp').then(({ registerWalletTools }) => {
+      manager = registerWalletTools({
+        getState: () => walletRef.current,
+        setState: (next) => { walletRef.current = next; setWallet(next) },
+        focusConsent: () => window.setTimeout(() => document.getElementById('consent-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80),
+        recordTrace: addTrace,
+      })
+      if (cancelled) return manager.dispose()
+      managerRef.current = manager
+      setTools(manager)
+    })
+    return () => { cancelled = true; managerRef.current = null; manager?.dispose() }
+  }, [addTrace])
+
+  useEffect(() => {
+    walletRef.current = wallet
+    if (managerRef.current) setTools(managerRef.current.sync())
+  }, [wallet])
+
+  function approve() {
+    const next = consentToWalletDraft(walletRef.current)
+    walletRef.current = next
+    setWallet(next)
+    addTrace({ toolName: 'human_consent', status: 'succeeded', summary: 'Person approved five claims for one audience and purpose.', createdAt: new Date().toISOString() })
+  }
+
+  function revoke() {
+    const next = revokeWalletDraft(walletRef.current)
+    walletRef.current = next
+    setWallet(next)
+    addTrace({ toolName: 'human_revoke', status: 'succeeded', summary: 'Person revoked the disclosure before export.', createdAt: new Date().toISOString() })
+  }
+
+  function reset() {
+    const next = createWalletState()
+    walletRef.current = next
+    setWallet(next)
+    setTraces([])
+  }
+
+  const status: WalletStatus = wallet.draft?.status ?? 'no_request'
+
+  return (
+    <div className="site-shell app-page wallet-page">
+      <header className="site-header app-header">
+        <Brand context="Private credential wallet" />
+        <ToolInventory tools={tools} />
+        <button className="reset-link" onClick={reset}><RotateCcw size={14} /> Reset</button>
+      </header>
+
+      <main className="workspace">
+        <section className="workspace-title">
+          <div><p className="eyebrow"><LockKeyhole size={14} /> Local private side</p><h1>Your credential wallet</h1><p>ChatGPT can ask for derived eligibility claims. It cannot export them until you approve the exact disclosure here.</p></div>
+          <div className="wallet-seal"><ShieldCheck size={24} /><strong>Issuer committed</strong><span>Openbridge University Demo Registry</span></div>
+        </section>
+
+        <div className="wallet-layout">
+          <section className="private-record panel">
+            <div className="panel-heading"><div><span>Private source record</span><h2>Values that do not cross</h2></div><LockKeyhole size={20} /></div>
+            <div className="masked-fields">
+              <MaskedField label="Date of birth" value="••••-••-18" />
+              <MaskedField label="Student ID" value="••••••••••" />
+              <MaskedField label="Exact GPA" value="•.••" />
+              <MaskedField label="Transcript" value="32 courses sealed" />
+              <MaskedField label="Home address" value="••••••••••••" />
+            </div>
+            <div className="privacy-rule"><Ban size={16} /><p>These private fields are not accepted by any wallet tool and are absent from exported proof bundles.</p></div>
+          </section>
+
+          <section id="consent-card" className={`consent-panel panel state-${status}`}>
+            <div className="panel-heading"><div><span>Disclosure request</span><h2>{consentHeading(status)}</h2></div><span className="state-dot"><CircleDot size={18} /></span></div>
+            {!wallet.draft ? (
+              <div className="empty-request"><Route size={34} /><strong>No request yet</strong><p>Ask ChatGPT to read the fellowship requirements in the other tab and prepare only the minimum disclosure.</p></div>
+            ) : (
+              <>
+                <dl className="request-meta">
+                  <div><dt>Audience</dt><dd>{wallet.draft.request.audience}</dd></div>
+                  <div><dt>Purpose</dt><dd>{wallet.draft.request.purpose}</dd></div>
+                  <div><dt>Expires</dt><dd>{new Date(wallet.draft.request.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</dd></div>
+                </dl>
+                <div className="claim-stack">{scholarshipRequirements.map((claim) => <ClaimRow key={claim.id} label={claim.label} privateAlternative={claim.privateAlternative} />)}</div>
+                {status === 'prepared' && <div className="consent-actions"><button className="approve-consent" onClick={approve}><UserRoundCheck size={17} /> Approve this disclosure</button><button className="reject-consent" onClick={revoke}>Reject</button></div>}
+                {status === 'consented' && <div className="consent-result ready"><KeyRound size={19} /><div><strong>One-time export unlocked</strong><p>ChatGPT can now call <code>wallet_export_proof</code>. This granted no broader access.</p></div></div>}
+                {status === 'exported' && <div className="consent-result exported"><PackageCheck size={19} /><div><strong>Minimum proof exported once</strong><p>The export tool has been withdrawn. Five claims crossed; zero private records crossed.</p></div></div>}
+                {status === 'revoked' && <div className="consent-result revoked"><Ban size={19} /><div><strong>Disclosure revoked</strong><p>No proof was exported. Ask ChatGPT to prepare a fresh request if needed.</p></div></div>}
+              </>
+            )}
+          </section>
+
+          <aside className="agent-rail panel">
+            <div className="panel-heading"><div><span>Browser agent</span><h2>Authority now</h2></div><Fingerprint size={19} /></div>
+            <ul className="tool-list">{tools.toolNames.map((name) => <li key={name}><Check size={13} />{name}</li>)}</ul>
+            <TraceList traces={traces} empty="Tool calls and human consent will appear here." />
+          </aside>
+        </div>
+      </main>
+      <footer><a href="/fellowship" target="_blank">Open fellowship verifier <ExternalLink size={13} /></a><span>Synthetic wallet · private values are illustrative</span></footer>
+    </div>
+  )
+}
+
+function FellowshipPage() {
+  const [verifier, setVerifier] = useState<VerifierState>(createVerifierState)
+  const verifierRef = useRef(verifier)
+  const managerRef = useRef<ToolManagerRef | null>(null)
+  const traceId = useRef(0)
+  const [tools, setTools] = useState<ToolStatus>({ supported: false, toolNames: [] })
+  const [traces, setTraces] = useState<Trace[]>([])
+
+  const addTrace = useCallback((event: ProofTraceEvent) => {
+    traceId.current += 1
+    setTraces((items) => [...items, { ...event, id: traceId.current }].slice(-8))
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    let manager: ToolManagerRef | null = null
+    void import('./verifierWebmcp').then(({ registerVerifierTools }) => {
+      manager = registerVerifierTools({
+        getState: () => verifierRef.current,
+        setState: (next) => { verifierRef.current = next; setVerifier(next) },
+        focusResult: () => window.setTimeout(() => document.getElementById('verification-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80),
+        recordTrace: addTrace,
+      })
+      if (cancelled) return manager.dispose()
+      managerRef.current = manager
+      setTools(manager)
+    })
+    return () => { cancelled = true; managerRef.current = null; manager?.dispose() }
+  }, [addTrace])
+
+  useEffect(() => {
+    verifierRef.current = verifier
+    if (managerRef.current) setTools(managerRef.current.sync())
+  }, [verifier])
+
+  function submit() {
+    const next = submitVerifiedApplication(verifierRef.current)
+    verifierRef.current = next
+    setVerifier(next)
+    addTrace({ toolName: 'human_submission', status: 'succeeded', summary: 'Person submitted the synthetic application after verification.', createdAt: new Date().toISOString() })
+  }
+
+  function reset() {
+    const next = createVerifierState()
+    verifierRef.current = next
+    setVerifier(next)
+    setTraces([])
+  }
+
+  const request = getScholarshipRequest()
+
+  return (
+    <div className="site-shell app-page fellowship-page">
+      <header className="site-header app-header">
+        <Brand context="Open Web Fellowship" />
+        <ToolInventory tools={tools} />
+        <button className="reset-link" onClick={reset}><RotateCcw size={14} /> Reset</button>
+      </header>
+
+      <main className="workspace">
+        <section className="workspace-title fellowship-title">
+          <div><p className="eyebrow"><Stamp size={14} /> Requesting side</p><h1>Prove eligibility without sending the file.</h1><p>This verifier accepts five derived claims. Full transcripts, exact grades, birth dates, IDs, and addresses are prohibited.</p></div>
+          <div className="deadline-card"><span>Application</span><strong>OWF · 2026</strong><small>Human submission required</small></div>
+        </section>
+
+        <div className="verifier-layout">
+          <section className="requirements-panel panel">
+            <div className="panel-heading"><div><span>Published contract</span><h2>Minimum requirements</h2></div><ClipboardCheck size={20} /></div>
+            <div className="requirements-list">{scholarshipRequirements.map((requirement) => <article key={requirement.id}><span><Check size={14} /></span><div><strong>{requirement.label}</strong><p>Accept <code>{requirement.id}</code>, not {requirement.privateAlternative.toLowerCase()}.</p></div></article>)}</div>
+            <dl className="contract-meta">
+              <div><dt>Audience</dt><dd>{SCHOLARSHIP_AUDIENCE}</dd></div>
+              <div><dt>Purpose</dt><dd>{SCHOLARSHIP_PURPOSE}</dd></div>
+              <div><dt>Nonce</dt><dd>{request.nonce}</dd></div>
+            </dl>
+          </section>
+
+          <section id="verification-result" className={`verification-panel panel verifier-${verifier.status}`}>
+            <div className="panel-heading"><div><span>Proof checkpoint</span><h2>{verifierHeading(verifier.status)}</h2></div><ShieldCheck size={20} /></div>
+            {verifier.status === 'awaiting_proof' && <div className="empty-request"><Send size={34} /><strong>Waiting for the courier</strong><p>Ask ChatGPT to obtain a consented proof from the wallet tab and bring it here for verification.</p></div>}
+            {verifier.status === 'rejected' && <div className="verification-error"><Ban size={21} /><div><strong>{verifier.result?.code}</strong><p>{verifier.result?.summary}</p></div></div>}
+            {(verifier.status === 'verified' || verifier.status === 'submitted') && (
+              <>
+                <div className="verified-seal"><BadgeCheck size={31} /><div><strong>Issuer and holder proof verified</strong><p>Five required claims arrived. Zero private records arrived.</p></div></div>
+                <div className="verification-grid">{scholarshipRequirements.map((item) => <span key={item.id}><Check size={13} />{item.label}</span>)}</div>
+                <div className="zero-records"><LockKeyhole size={17} /><strong>Not received:</strong><span>birth date · student ID · exact GPA · transcript · address</span></div>
+                {verifier.status === 'verified' && <button className="submit-application" onClick={submit}><UserRoundCheck size={17} /> Submit verified application</button>}
+                {verifier.status === 'submitted' && <div className="submission-receipt"><PackageCheck size={20} /><div><strong>Application submitted by the person</strong><p>Receipt version {verifier.version}. No submission tool exists.</p></div></div>}
+              </>
+            )}
+          </section>
+
+          <aside className="agent-rail panel">
+            <div className="panel-heading"><div><span>Browser agent</span><h2>Authority now</h2></div><Fingerprint size={19} /></div>
+            <ul className="tool-list">{tools.toolNames.map((name) => <li key={name}><Check size={13} />{name}</li>)}</ul>
+            <TraceList traces={traces} empty="Requirement reads, proof checks, and blocked calls will appear here." />
+          </aside>
+        </div>
+      </main>
+      <footer><a href="/wallet" target="_blank">Open private wallet <ExternalLink size={13} /></a><span>All people, credentials, and applications are synthetic.</span></footer>
+    </div>
+  )
+}
+
+function ToolInventory({ tools }: { tools: ToolStatus }) {
+  return (
+    <details className={`tool-inventory ${tools.supported ? 'connected' : ''}`}>
+      <summary><Fingerprint size={15} /><span>{tools.supported ? 'Site tools connected' : 'Site tools ready'}</span><small>{tools.supported ? `${tools.toolNames.length} tools` : 'Open in ChatGPT'}</small><ChevronRight size={13} /></summary>
+      {tools.supported && <div><strong>Available on this page</strong><ul>{tools.toolNames.map((name) => <li key={name}>{name}</li>)}</ul></div>}
+    </details>
+  )
+}
+
+function MaskedField({ label, value }: { label: string; value: string }) {
+  return <div><span>{label}</span><strong>{value}</strong><LockKeyhole size={13} /></div>
+}
+
+function ClaimRow({ label, privateAlternative }: { label: string; privateAlternative: string }) {
+  return <div><span><Check size={13} /></span><strong>{label}</strong><small>instead of {privateAlternative.toLowerCase()}</small></div>
+}
+
+function TraceList({ traces, empty }: { traces: Trace[]; empty: string }) {
+  return (
+    <div className="trace-block">
+      <h3>Live trace <span>{traces.length}</span></h3>
+      {traces.length === 0 ? <p className="trace-empty">{empty}</p> : <ol>{[...traces].reverse().map((trace) => <li key={trace.id} className={trace.status}><span>{trace.status}</span><strong>{trace.toolName}</strong><p>{trace.summary}</p></li>)}</ol>}
+    </div>
+  )
+}
+
+function consentHeading(status: WalletStatus) {
+  if (status === 'prepared') return 'Review five derived claims'
+  if (status === 'consented') return 'Consent granted'
+  if (status === 'exported') return 'Proof left the wallet'
+  if (status === 'revoked') return 'Request closed'
+  return 'Waiting for a request'
+}
+
+function verifierHeading(status: VerifierState['status']) {
+  if (status === 'verified') return 'Minimum proof verified'
+  if (status === 'rejected') return 'Proof rejected safely'
+  if (status === 'submitted') return 'Human submission complete'
+  return 'No private file required'
 }
 
 export default App

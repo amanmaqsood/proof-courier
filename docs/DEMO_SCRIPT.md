@@ -1,71 +1,57 @@
-# Recon Room demo film: target 2:45
+# Proof Courier demo film — target 2:45
 
-The film must be public on YouTube, under three minutes, and include clear spoken audio. Record the deployed app inside ChatGPT's in-app browser so the tool calls are real WebMCP calls. Do not use the **Preview agent pass** fallback in the final film.
+## 0:00–0:20 — the privacy problem
 
-## 0:00-0:20: The problem and promise
+**DO:** Show the landing route from private wallet to verifier.
 
-**Show:** The three source records and approval boundary.
+**SAY:**
 
-**Say:**
+> A browser agent can now work across websites, but private records should not become its clipboard. Proof Courier lets the agent carry exactly the proof a site needs, while the records stay behind.
 
-> A purchase order, goods receipt, and supplier invoice disagree. Today a person has to reconstruct the truth across screens while automation is either too weak to help or too powerful to trust. Recon Room lets a browser agent prepare the reconciliation, while a person keeps the only approval control.
+## 0:20–0:45 — verifier publishes the contract
 
-## 0:20-0:35: Why WebMCP
+**DO:** Open `/fellowship` and `/wallet` in separate ChatGPT browser tabs. Ask: “Check the fellowship requirements, obtain only the minimum eligibility proof from my wallet, and prepare the application. Stop for my consent and final submission.” Let ChatGPT call `fellowship_get_requirements`.
 
-**Show:** Open the **WebMCP connected** inventory. Keep the seven tool names visible briefly.
+**SAY:**
 
-**Say:**
+> The fellowship page publishes five minimum claims, a purpose, audience, one-time nonce, and a ban on raw records. These are live page tools, not a backend the person cannot see.
 
-> These page-native WebMCP tools give the agent named domain actions inside the screen the person is reviewing. The agent and the person share the same versioned case state.
+## 0:45–1:20 — capability appears only after consent
 
-## 0:35-1:25: Real agent pass
+**DO:** Let ChatGPT call `wallet_get_summary` and `wallet_prepare_disclosure`. Show the exact audience, purpose, expiry, five claims, and masked private values. Show that `wallet_export_proof` is absent. Click **Approve this disclosure**. Show the export tool appear.
 
-**Show:** In ChatGPT, enter exactly: **"Review the urgent case and prepare it for my approval."** Let the agent call the tools. Keep both the ChatGPT tool activity and the page updates visible where possible.
+**SAY:**
 
-**Say only when useful:**
+> The agent can prepare the request, but it cannot consent. My click changes the page's authority surface: a one-time export tool appears for this disclosure only.
 
-> The agent lists the case, inspects immutable source records, runs deterministic comparison, and stages three reversible drafts. It can select only a value that exists in a named source record. The arithmetic is application code, not model-generated prose.
+## 1:20–1:50 — carry and verify
 
-Pause on **3/3 drafted**, **0 unresolved**, and **$362.00 guarded**.
+**DO:** Let ChatGPT call `wallet_export_proof`, carry the returned bundle to the other tab, and call `fellowship_verify_proof`. Show the wallet export tool disappear and the verifier turn green.
 
-## 1:25-1:55: Human correction
+**SAY:**
 
-**Show:** In **Tax rate**, click **18%**. Pause on **Human correction · 18%** and the separate human activity entry. Then ask ChatGPT: **"Try to revert your tax draft, then re-read the review state."** Show the blocked tool call and the unchanged 18% correction.
+> Five derived claims cross. Date of birth, student ID, exact GPA, transcript, address, and name do not. The verifier checks the issuer signature, Merkle inclusion paths, holder binding, audience, purpose, expiry, and replay.
 
-**Say:**
+## 1:50–2:10 — final human boundary
 
-> The agent proposed the invoice tax rate. I choose eighteen percent from the purchase order. Recon Room preserves both identities instead of silently overwriting the agent's work. When the agent tries to revert my correction, the product blocks it and keeps my decision intact.
+**DO:** Show the accepted receipt and tool inventory. Point out that no submit tool exists. Click **Submit verified application** yourself.
 
-## 1:55-2:20: Consequential boundary
+**SAY:**
 
-**Show:** Click **Approve reconciled record**. Pause on **Case approved**, **6 tools**, the approval receipt, and the capability-withdrawal trace.
+> Verification prepares the application. It never submits it. The final consequential action remains visibly human.
 
-**Say:**
+## 2:10–2:35 — adversarial proof
 
-> Only the person can approve. There is no WebMCP tool for approval, posting, or payment. After approval, both mutation tools are withdrawn and a read-only receipt appears. Even a retained old mutation function fails closed.
+**DO:** Briefly show the eval receipt: 15 of 15. Flash wrong audience, purpose, expiry, replay, over-disclosure, forgery, mutation, and capability-lifecycle scenarios.
 
-## 2:20-2:40: Engineering proof
+**SAY:**
 
-**Show:** A concise terminal capture of `npm run verify`, ending on the passing totals and verification receipt.
+> This is tested as a protocol, not staged as a happy path. Fifteen adversarial scenarios and a real two-tab browser journey produce machine-readable receipts.
 
-**Say:**
+## 2:35–2:45 — close
 
-> The release gate passes 25 unit and contract tests, 12 adversarial judge scenarios, three Chromium journeys, and a production build. The tests include stale writes, instruction injection, immutable evidence, capability withdrawal, and the complete mobile journey.
+**DO:** Return to the landing headline.
 
-## 2:40-2:50: Close
+**SAY:**
 
-**Show:** Return to the approved page.
-
-**Say:**
-
-> Recon Room makes the web better for people and agents by giving the agent structured work, the person visible judgment, and the product enforceable boundaries. The agent prepares. The human decides.
-
-## Recording gate
-
-- Duration is below 2:55 before upload.
-- Voice is audible at normal laptop volume.
-- The live URL and project name appear in the first ten seconds.
-- A real ChatGPT WebMCP invocation is visible.
-- The human correction, `$362.00`, 7 → 6 tools, and no-payment receipt are legible.
-- No credentials, private tabs, notifications, or local filesystem paths appear.
-- YouTube visibility is **Public**, not Unlisted, before submission.
+> Proof Courier gives WebMCP a privacy-native pattern: the agent carries proof, not your private records.

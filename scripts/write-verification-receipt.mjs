@@ -29,7 +29,7 @@ const buildArtifacts = await Promise.all(buildFiles.sort().map(async (path) => {
 }))
 
 const receipt = {
-  suite: 'Recon Room release gate',
+  suite: 'Proof Courier release gate',
   command: 'npm run verify',
   success: true,
   generatedAt: new Date().toISOString(),
@@ -39,6 +39,7 @@ const receipt = {
     { name: 'unit and contract tests', command: 'npm test', status: 'passed' },
     { name: 'judge scenarios', command: 'npm run eval', status: evalReceipt.success ? 'passed' : 'failed', total: evalReceipt.total },
     { name: 'production build', command: 'npm run build', status: 'passed' },
+    { name: 'wallet/verifier bundle isolation', command: 'npm run verify:bundles', status: 'passed' },
     { name: 'browser journeys', command: 'npm run e2e', status: browserResults.stats.unexpected === 0 ? 'passed' : 'failed', total: browserResults.stats.expected },
   ],
   buildArtifacts,

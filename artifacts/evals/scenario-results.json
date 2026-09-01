@@ -1,69 +1,84 @@
 {
-  "suite": "Recon Room judge scenarios",
+  "suite": "Proof Courier adversarial judge scenarios",
   "command": "npm run eval",
   "success": true,
-  "passed": 12,
+  "passed": 15,
   "failed": 0,
-  "total": 12,
+  "total": 15,
   "scenarios": [
     {
       "id": "E1",
-      "title": "completes the agent to human handoff and withdraws mutation capabilities",
+      "title": "accepts one valid minimum-disclosure presentation",
       "status": "passed"
     },
     {
       "id": "E2",
-      "title": "rejects a selected source that has no observed field value",
+      "title": "proves raw identity values never enter the courier bundle",
       "status": "passed"
     },
     {
       "id": "E3",
-      "title": "publishes strict required inputs and rejects an invalid source at runtime",
+      "title": "rejects a presentation sent to a different audience",
       "status": "passed"
     },
     {
       "id": "E4",
-      "title": "blocks a stale write and succeeds only after reinspection",
+      "title": "rejects a presentation repurposed after consent",
       "status": "passed"
     },
     {
       "id": "E5",
-      "title": "quarantines instruction injection without exposing consequential capabilities",
+      "title": "rejects an expired presentation",
       "status": "passed"
     },
     {
       "id": "E6",
-      "title": "aborts the complete tool lifecycle on disposal",
+      "title": "rejects a replayed one-time nonce",
       "status": "passed"
     },
     {
       "id": "E7",
-      "title": "preserves a human correction against agent reversion",
+      "title": "rejects a missing required eligibility claim",
       "status": "passed"
     },
     {
       "id": "E8",
-      "title": "applies the same contract to a second synthetic reconciliation shape",
+      "title": "rejects a claim the verifier did not request",
       "status": "passed"
     },
     {
       "id": "E9",
-      "title": "fails closed when a retained mutation tool is called after approval",
+      "title": "rejects a derived claim changed after issuer commitment",
       "status": "passed"
     },
     {
       "id": "E10",
-      "title": "returns an actionable error for an unknown case without changing state",
+      "title": "rejects a forged issuer signature",
       "status": "passed"
     },
     {
       "id": "E11",
-      "title": "exposes no early approval receipt or consequential action capability",
+      "title": "rejects an envelope changed after holder consent",
       "status": "passed"
     },
     {
       "id": "E12",
-      "title": "keeps all source records byte-for-byte immutable through agent staging",
+      "title": "refuses duplicate or internal claim requests",
+      "status": "passed"
+    },
+    {
+      "id": "E13",
+      "title": "keeps the export capability absent until a visible human action",
+      "status": "passed"
+    },
+    {
+      "id": "E14",
+      "title": "withdraws export after one call and exposes a safe receipt",
+      "status": "passed"
+    },
+    {
+      "id": "E15",
+      "title": "offers no agent consent, approval, or final submission tool",
       "status": "passed"
     }
   ]

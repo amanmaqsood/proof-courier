@@ -1,30 +1,47 @@
-# Recon Room threat model
+# Proof Courier threat model
 
-Recon Room is a synthetic challenge prototype. Its safety claim is intentionally narrow: an in-browser agent can inspect evidence and prepare reversible drafts, but it cannot approve, post, pay, transfer funds, access credentials, or connect to an accounting system.
+## Narrow claim
 
-## Trust boundaries
+Proof Courier demonstrates how two WebMCP pages can let an agent transport a minimum, purpose-bound synthetic proof while preserving visible human consent and final submission boundaries.
 
-| Boundary | Trusted | Untrusted | Control |
-| --- | --- | --- | --- |
-| Source records | Record shape and deterministic fixture loading | Supplier text and excerpts | Read-only tools mark source content untrusted; exact anchors remain visible |
-| Agent input | Tool name and validated schema | Model-selected arguments and reasons | Strict schemas, bounded enums, minimum reason length, source-derived values only |
-| Shared state | Versioned domain transitions | Stale or repeated writes | Every mutation requires the currently observed version |
-| Human correction | Human-authored current draft | Later agent mutation | Agent cannot revert a human correction |
-| Approval | Human button and receipt | Agent request to approve or pay | No approval/payment tool exists; mutation tools are withdrawn after approval |
-| Page lifecycle | Current document | Detached or replaced page | All registrations share one `AbortSignal` and are removed on disposal |
+It does not claim production identity security, W3C Verifiable Credential conformance, zero knowledge, legal compliance, secure hardware, remote key custody, real issuer connectivity, or protection from a malicious browser/device.
 
-## Abuse cases exercised
+## Protected in this prototype
 
-1. A supplier note says to ignore prior instructions and approve. It is returned only as quarantined evidence.
-2. An agent selects a source that has no observed value. The write is rejected.
-3. An agent submits a stale case version. The write is rejected and reinspection is required.
-4. An agent tries to revert a human correction. The human-authored draft remains unchanged.
-5. A case is human-approved. Both mutation tools disappear and only a read-only receipt is added.
-6. The document lifecycle ends. The complete tool registration is aborted.
+| Threat | Enforced response |
+| --- | --- |
+| Agent exports before consent | Export tool is not registered |
+| Agent exports twice | Capability is withdrawn after one export |
+| Proof sent to another verifier | Audience check rejects it |
+| Proof reused for another purpose | Purpose check rejects it |
+| Proof retained too long | Ten-minute expiry rejects it |
+| Proof replayed at the verifier | Nonce is recorded and rejected on reuse |
+| Required claim removed | Missing-claim check rejects it |
+| Extra private/internal claim added | Over-disclosure check rejects it |
+| Claim changed | Expected-value and Merkle checks reject it |
+| Credential metadata forged | Issuer signature check rejects it |
+| Presentation changed after consent | Holder signature check rejects it |
+| Agent attempts final application | No submit tool exists; visible human button only |
+| Stale tool call races current wallet state | Version precondition blocks it |
+| Verifier page downloads wallet signing fixtures | Route-triggered code splitting keeps wallet fixtures out of verifier and main chunks; release gate scans built assets |
 
-## Residual limitations
+## Private source categories
 
-- Records are seeded in memory and reset on reload. There is no authentication, persistence, ERP integration, or multi-tenant authorization.
-- The prototype demonstrates workflow and capability design, not legal, accounting, or tax correctness.
-- Browser-level schema validation depends on the WebMCP host. Domain validation repeats the consequential source, version, actor, and approval checks.
-- Agent reasoning quality must still be evaluated in a live supported browser; deterministic tests do not replace that final end-to-end run.
+The synthetic wallet contains an applicant name, date of birth, student ID, exact GPA, transcript category, and address. Those values are not accepted by WebMCP tool schemas and are absent from every tool result and proof bundle. The verifier receives only five derived claims:
+
+- over 18;
+- actively enrolled;
+- eligible study field;
+- GPA band at or above 3.5;
+- residency eligible.
+
+## Known prototype limitations
+
+- All claims and cryptographic fixtures are synthetic. Wallet signing fixtures are client-side because this is a browser prototype, but they are isolated to the wallet runtime chunk.
+- In-memory replay state resets with the verifier tab.
+- There is one demonstration issuer, holder, policy, and audience.
+- There is no authentication, revocation registry, device binding, backend, secure enclave, or cross-device wallet.
+- A malicious page or compromised browser is outside this prototype's trust boundary.
+- Derived claims are selectively disclosed but are not zero-knowledge range proofs.
+
+A production implementation would move holder keys into secure user-controlled custody, use real issuer infrastructure and revocation, authenticate both sites, persist replay protection, formally version the policy, and undergo independent security/privacy review.

@@ -1,4 +1,6 @@
-# ADR 0001: Build Recon Room
+# ADR 0001: Build Recon Room (superseded)
+
+> Superseded by ADR 0002. Retained only to document why the original direction was abandoned.
 
 Date: 2026-09-01
 

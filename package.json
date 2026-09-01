@@ -1,5 +1,5 @@
 {
-  "name": "recon-room",
+  "name": "proof-courier",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -7,9 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test": "vitest run",
-    "eval": "vitest run src/evals/reconciliation.evals.test.ts --reporter=json --outputFile=artifacts/evals/.vitest-results.json && node scripts/write-eval-receipt.mjs",
+    "eval": "vitest run src/evals/proofCourier.evals.test.ts --reporter=json --outputFile=artifacts/evals/.vitest-results.json && node scripts/write-eval-receipt.mjs",
     "e2e": "playwright test",
-    "verify": "npm run lint && npm test && npm run eval && npm run build && npm run e2e && node scripts/write-verification-receipt.mjs",
+    "verify:bundles": "node scripts/verify-bundle-isolation.mjs",
+    "verify": "npm run lint && npm test && npm run eval && npm run build && npm run verify:bundles && npm run e2e && node scripts/write-verification-receipt.mjs",
     "test:watch": "vitest",
     "lint": "eslint ."
   },
