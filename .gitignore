@@ -8,3 +8,6 @@ outputs/
 .vercel
 .env*
 artifacts/evals/.vitest-results.json
+artifacts/e2e/
+artifacts/playwright-report/
+test-results/

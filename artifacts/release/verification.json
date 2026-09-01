@@ -1,0 +1,53 @@
+{
+  "suite": "Recon Room release gate",
+  "command": "npm run verify",
+  "success": true,
+  "generatedAt": "2026-09-01T04:33:30.622Z",
+  "sourceRevision": "local-working-tree",
+  "checks": [
+    {
+      "name": "lint",
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    {
+      "name": "unit and contract tests",
+      "command": "npm test",
+      "status": "passed"
+    },
+    {
+      "name": "judge scenarios",
+      "command": "npm run eval",
+      "status": "passed",
+      "total": 12
+    },
+    {
+      "name": "production build",
+      "command": "npm run build",
+      "status": "passed"
+    },
+    {
+      "name": "browser journeys",
+      "command": "npm run e2e",
+      "status": "passed",
+      "total": 3
+    }
+  ],
+  "buildArtifacts": [
+    {
+      "path": "dist/assets/index-CkqLRHHJ.js",
+      "bytes": 226034,
+      "sha256": "4829b62145105287dd443900ad2d75ec95825cca545e785a33e03ce2f26ea458"
+    },
+    {
+      "path": "dist/assets/index-D7qkSIk3.css",
+      "bytes": 20012,
+      "sha256": "c09dae45dd8c73c8950f0e92cb07087671f78fa0eb0c09ce1973711c21bfc26f"
+    },
+    {
+      "path": "dist/index.html",
+      "bytes": 570,
+      "sha256": "ef6d8e813024f3ad9a61845cb304ea9ee10b14d3d514b64e4d7da8e91516e7f3"
+    }
+  ]
+}

@@ -21,7 +21,15 @@ Run `npm test`. The public domain seam and judge scenarios verify:
 13. every native WebMCP call produces a bounded success or blocked trace event;
 14. a second synthetic case reuses the same contract for a different discrepancy shape.
 
-Run `npm run eval` to execute eight high-risk judge scenarios and regenerate [`artifacts/evals/scenario-results.json`](../artifacts/evals/scenario-results.json). The committed receipt contains scenario names and pass/fail status without local filesystem paths.
+Run `npm run eval` to execute twelve high-risk judge scenarios and regenerate [`artifacts/evals/scenario-results.json`](../artifacts/evals/scenario-results.json). The final four adversarial scenarios prove that a retained mutation function still fails after approval, unknown cases fail without state change, consequential capabilities are absent before approval, and source records remain byte-for-byte immutable through agent staging.
+
+Run `npm run e2e` for three Chromium journeys against the actual rendered app:
+
+1. a native-shaped WebMCP registry drives the complete agent-to-human approval journey and confirms the 7 → 6 capability transition;
+2. the synthetic instruction-injection fixture opens only as quarantined evidence and cannot create an approval tool;
+3. the guided journey remains usable at 390px without horizontal overflow.
+
+`npm run verify` is the release gate. It runs lint, all 24 unit/contract tests, the 12 judge scenarios, the production build, and the three browser journeys before writing [`artifacts/release/verification.json`](../artifacts/release/verification.json) with check results and SHA-256 hashes for the production bundle.
 
 ## Agent eval cases
 

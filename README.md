@@ -71,15 +71,12 @@ Open `http://localhost:5173`.
 ## Verification
 
 ```bash
-npm test
-npm run eval
-npm run lint
-npm run build
+npm run verify
 ```
 
-Twenty automated tests cover deterministic discrepancy detection, exact evidence anchors, source-bound resolution, quantified exposure, reversible staging, protected human correction, readiness, human-only approval, stale-write rejection, WebMCP tool contracts, trace receipts, lifecycle cleanup, forbidden-capability absence, dynamic capability transitions, and a second synthetic reconciliation shape.
+The one-command release gate runs lint, 24 unit/contract tests, 12 high-risk judge scenarios, the production build, and three Playwright browser journeys. The browser suite installs a native-shaped `document.modelContext` harness, drives the registered tools through the visible product, records a human correction, approves through the human-only control, and verifies the live tool inventory changes from seven review capabilities to six read-only/post-approval capabilities.
 
-Eight judge scenarios also produce a portable machine-readable receipt at [`artifacts/evals/scenario-results.json`](artifacts/evals/scenario-results.json). See [`docs/EVALS.md`](docs/EVALS.md) for the evaluation plan and [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) for the trust boundaries.
+The judge scenarios produce a portable receipt at [`artifacts/evals/scenario-results.json`](artifacts/evals/scenario-results.json). The complete gate writes build hashes and check results to [`artifacts/release/verification.json`](artifacts/release/verification.json). See [`docs/EVALS.md`](docs/EVALS.md) for the evaluation plan, [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) for the trust boundaries, and [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the under-three-minute submission film.
 
 ## Quantified state transition
 

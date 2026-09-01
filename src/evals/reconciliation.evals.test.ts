@@ -165,4 +165,44 @@ describe('judge scenario receipts', () => {
     expect(getReviewState(resolved)).toMatchObject({ discrepancyCount: 1, unresolvedCount: 0, readyForHumanApproval: true })
     expect(getFinancialSummary(resolved)).toMatchObject({ invoiceSubtotal: 850, resolvedSubtotal: 820, amountUnderReview: 30 })
   })
+
+  it('E9 fails closed when a retained mutation tool is called after approval', () => {
+    const harness = createHarness()
+    const retainedStageTool = harness.tools.get('stage_resolution')!
+    stageAll(harness)
+    harness.setCurrent(approveCase(harness.current(), 'human').case)
+    harness.registration.sync(harness.current())
+
+    expect(harness.tools.has('stage_resolution')).toBe(false)
+    expect(() => retainedStageTool.execute({
+      caseId: 'RR-1042', discrepancyId: 'qty-001', selectedSource: 'purchaseOrder',
+      reason: 'Attempt a retained write after approval.', expectedVersion: harness.current().version,
+    })).toThrow('Approved cases cannot be changed')
+    expect(harness.traces.at(-1)).toMatchObject({ toolName: 'stage_resolution', status: 'blocked' })
+  })
+
+  it('E10 returns an actionable error for an unknown case without changing state', () => {
+    const harness = createHarness()
+    const before = JSON.stringify(harness.current())
+    expect(() => harness.tools.get('inspect_case')!.execute({ caseId: 'RR-9999' }))
+      .toThrow('Call list_cases first')
+    expect(JSON.stringify(harness.current())).toBe(before)
+    expect(harness.traces.at(-1)).toMatchObject({ toolName: 'inspect_case', status: 'blocked' })
+  })
+
+  it('E11 exposes no early approval receipt or consequential action capability', () => {
+    const harness = createHarness()
+    const names = [...harness.tools.keys()]
+    expect(names).not.toContain('get_approval_receipt')
+    expect(names.some((name) => /approve|pay|post|transfer|credential/i.test(name))).toBe(false)
+    expect(getReviewState(harness.current())).toMatchObject({ readyForHumanApproval: false })
+  })
+
+  it('E12 keeps all source records byte-for-byte immutable through agent staging', () => {
+    const harness = createHarness()
+    const before = JSON.stringify(harness.current().records)
+    stageAll(harness)
+    expect(JSON.stringify(harness.current().records)).toBe(before)
+    expect(Object.values(harness.current().drafts)).toHaveLength(3)
+  })
 })

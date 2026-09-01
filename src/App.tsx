@@ -293,7 +293,7 @@ function App() {
             </summary>
             {tools.supported && <div className="tool-popover"><span>Active capabilities</span><ul>{tools.toolNames.map((name) => <li key={name}>{name}</li>)}</ul></div>}
           </details>
-          <div className="eval-status"><CheckCircle2 size={14} /><span><strong>8/8 scenarios</strong><small>verified</small></span></div>
+          <div className="eval-status"><CheckCircle2 size={14} /><span><strong>12/12 scenarios</strong><small>verified</small></span></div>
         </div>
         <button className="reset-button" type="button" onClick={reset}><RotateCcw size={15} /> Reset case</button>
       </header>

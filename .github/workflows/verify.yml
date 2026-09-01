@@ -19,7 +19,15 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run lint
-      - run: npm test
-      - run: npm run eval
-      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run verify
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recon-room-verification
+          if-no-files-found: warn
+          path: |
+            artifacts/evals/scenario-results.json
+            artifacts/release/verification.json
+            artifacts/playwright-report/

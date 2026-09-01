@@ -2,9 +2,9 @@
   "suite": "Recon Room judge scenarios",
   "command": "npm run eval",
   "success": true,
-  "passed": 8,
+  "passed": 12,
   "failed": 0,
-  "total": 8,
+  "total": 12,
   "scenarios": [
     {
       "id": "E1",
@@ -44,6 +44,26 @@
     {
       "id": "E8",
       "title": "applies the same contract to a second synthetic reconciliation shape",
+      "status": "passed"
+    },
+    {
+      "id": "E9",
+      "title": "fails closed when a retained mutation tool is called after approval",
+      "status": "passed"
+    },
+    {
+      "id": "E10",
+      "title": "returns an actionable error for an unknown case without changing state",
+      "status": "passed"
+    },
+    {
+      "id": "E11",
+      "title": "exposes no early approval receipt or consequential action capability",
+      "status": "passed"
+    },
+    {
+      "id": "E12",
+      "title": "keeps all source records byte-for-byte immutable through agent staging",
       "status": "passed"
     }
   ]

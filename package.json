@@ -8,6 +8,8 @@
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "eval": "vitest run src/evals/reconciliation.evals.test.ts --reporter=json --outputFile=artifacts/evals/.vitest-results.json && node scripts/write-eval-receipt.mjs",
+    "e2e": "playwright test",
+    "verify": "npm run lint && npm test && npm run eval && npm run build && npm run e2e && node scripts/write-verification-receipt.mjs",
     "test:watch": "vitest",
     "lint": "eslint ."
   },
@@ -18,6 +20,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
     "@types/react": "19.2.18",
