@@ -1,0 +1,49 @@
+{
+  "receiptVersion": 1,
+  "capturedAt": "2026-09-01T11:54:56Z",
+  "sourceCommit": "564f7d4d75581402c291abaee814199b659082b0",
+  "deploymentId": "dpl_3BZHusZqQLsYWa6iExY3XZKF62q1",
+  "baseUrl": "https://proof-courier-orcin.vercel.app",
+  "host": "OpenAI Codex in-app browser",
+  "execution": "native WebMCP capability calls across separate live wallet and verifier tabs",
+  "consent": {
+    "approvedByUser": true,
+    "claimIds": [
+      "age_over_18",
+      "active_enrollment",
+      "study_field",
+      "gpa_band",
+      "residency_eligible"
+    ],
+    "audience": "openbridge-scholarship-2026",
+    "purpose": "Verify minimum eligibility for the Open Web Fellowship."
+  },
+  "export": {
+    "status": "passed",
+    "encodedProofLength": 4288,
+    "privateFieldsDisclosed": [],
+    "privateValueLeakDetected": false,
+    "exportCapabilityPresentBeforeHumanConsent": false,
+    "exportCapabilityPresentAfterHumanConsent": true,
+    "exportCapabilityPresentAfterExport": false,
+    "disclosureReceiptPresentAfterExport": true
+  },
+  "verification": {
+    "status": "passed",
+    "verifierState": "verified",
+    "privateFieldsReceived": [],
+    "verificationReceiptPresent": true,
+    "agentSubmissionCapabilityPresent": false,
+    "humanSubmissionButtonVisible": true,
+    "humanSubmissionClicked": false
+  },
+  "runtime": {
+    "walletConsoleWarningsOrErrors": [],
+    "verifierConsoleWarningsOrErrors": []
+  },
+  "limitations": [
+    "This receipt proves native WebMCP behavior in the OpenAI Codex in-app browser.",
+    "It does not claim a separate natural-language ChatGPT conversation autonomously chose the tool sequence.",
+    "All identities, credentials, institutions, claims, and applications are synthetic."
+  ]
+}

@@ -78,6 +78,7 @@ The release gate runs lint, unit and contract tests, 15 named adversarial judge 
 - `artifacts/evals/scenario-results.json`
 - `artifacts/e2e/results.json`
 - `artifacts/release/verification.json`
+- `artifacts/release/live-webmcp-verification.json` — one authorized native WebMCP run across the deployed wallet and verifier
 
 The main implementation is in:
 

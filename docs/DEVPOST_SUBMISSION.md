@@ -42,7 +42,7 @@ Most agent safety demos add a confirmation dialog before a powerful action. Proo
 
 ## How it was tested
 
-The repository contains 15 named adversarial scenarios covering wrong audience, wrong purpose, expiry, replay, missing claims, over-disclosure, changed claims, forged issuer signatures, post-consent mutation, unsafe claim requests, and dynamic authority. A Playwright suite executes the full journey across separate wallet and verifier page registries, checks 390px layouts, and verifies malformed-proof recovery. `npm run verify` emits machine-readable receipts.
+The repository contains 15 named adversarial scenarios covering wrong audience, wrong purpose, expiry, replay, missing claims, over-disclosure, changed claims, forged issuer signatures, post-consent mutation, unsafe claim requests, and dynamic authority. A Playwright suite executes the full journey across separate wallet and verifier page registries, checks 390px layouts, and verifies malformed-proof recovery. `npm run verify` emits machine-readable receipts. An additional authorized run used native WebMCP in the OpenAI Codex in-app browser against the public deployment: five synthetic claims crossed, zero private fields crossed, export disappeared after use, verification passed, and no agent submission capability appeared.
 
 ## Scope and limits
 
