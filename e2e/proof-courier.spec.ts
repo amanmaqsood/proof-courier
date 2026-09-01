@@ -68,9 +68,11 @@ test('human consent unlocks one cross-tab proof and keeps final submission human
   })
 
   await expect(wallet.getByRole('heading', { name: 'Review five derived claims' })).toBeVisible()
+  await expect(wallet.getByText('ABSENT UNTIL CONSENT', { exact: true })).toBeVisible()
   expect(await toolNames(wallet)).not.toContain('wallet_export_proof')
   await wallet.getByRole('button', { name: 'Approve this disclosure' }).click()
   await expect(wallet.getByText('One-time export unlocked', { exact: true })).toBeVisible()
+  await expect(wallet.getByText('LIVE FOR ONE CALL', { exact: true })).toBeVisible()
   await expect.poll(() => toolNames(wallet)).toContain('wallet_export_proof')
 
   const exported = await callTool(wallet, 'wallet_export_proof', { expectedVersion: 3 }) as {
@@ -78,6 +80,7 @@ test('human consent unlocks one cross-tab proof and keeps final submission human
   }
   expect(exported.data.privateFieldsDisclosed).toEqual([])
   await expect(wallet.getByText('Minimum proof exported once', { exact: true })).toBeVisible()
+  await expect(wallet.getByText('WITHDRAWN AFTER USE', { exact: true })).toBeVisible()
   await expect.poll(() => toolNames(wallet)).not.toContain('wallet_export_proof')
   await expect.poll(() => toolNames(wallet)).toContain('wallet_get_disclosure_receipt')
 
@@ -94,16 +97,28 @@ test('human consent unlocks one cross-tab proof and keeps final submission human
   await expect(fellowship.getByText('Application submitted by the person', { exact: true })).toBeVisible()
 })
 
-test('the landing, wallet, and verifier remain usable at 390px', async ({ page }) => {
+test('the landing, wallet, verifier, and evidence room remain usable at 390px', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await installWebMcpHarness(page)
 
-  for (const path of ['/', '/wallet', '/fellowship']) {
+  for (const path of ['/', '/wallet', '/fellowship', '/evidence']) {
     await page.goto(path)
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390)
   }
 
-  await expect(page.getByRole('heading', { name: 'Prove eligibility without sending the file.' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Trust should be visible/u })).toBeVisible()
+})
+
+test('the public evidence room exposes the complete judge proof without a product claim gap', async ({ page }) => {
+  await page.goto('/evidence')
+
+  await expect(page.getByRole('heading', { name: /Trust should be visible/u })).toBeVisible()
+  await expect(page.getByText('15/15', { exact: true })).toBeVisible()
+  await expect(page.getByText('4/4', { exact: true })).toBeVisible()
+  await expect(page.getByText('0 → 1 → 0', { exact: true })).toBeVisible()
+  await expect(page.getByText('A capability that lives for exactly one call.', { exact: true })).toBeVisible()
+  await expect(page.getByText('Agent submission capability: absent', { exact: true })).toBeVisible()
+  await expect(page.getByText('What this evidence does not claim', { exact: true })).toBeVisible()
 })
 
 test('rejected proof remains visible and recoverable without a submission action', async ({ page }) => {

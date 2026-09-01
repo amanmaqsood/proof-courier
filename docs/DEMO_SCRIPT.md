@@ -42,11 +42,11 @@
 
 ## 2:10–2:35 — adversarial proof
 
-**DO:** Briefly show the eval receipt: 15 of 15. Flash wrong audience, purpose, expiry, replay, over-disclosure, forgery, mutation, and capability-lifecycle scenarios.
+**DO:** Open `/evidence`. Show the 0 → 1 → 0 capability timeline, the native WebMCP receipt, and the 15 of 15 adversarial matrix. Flash wrong audience, purpose, expiry, replay, over-disclosure, forgery, mutation, and capability-lifecycle scenarios.
 
 **SAY:**
 
-> This is tested as a protocol, not staged as a happy path. Fifteen adversarial scenarios and a real two-tab browser journey produce machine-readable receipts.
+> This is tested as a protocol, not staged as a happy path. Fifteen adversarial scenarios, four browser journeys, and a native two-tab WebMCP run produce inspectable receipts, with the limits stated beside the proof.
 
 ## 2:35–2:45 — close
 

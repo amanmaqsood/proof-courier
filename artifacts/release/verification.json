@@ -2,7 +2,7 @@
   "suite": "Proof Courier release gate",
   "command": "npm run verify",
   "success": true,
-  "generatedAt": "2026-09-01T11:50:23.444Z",
+  "generatedAt": "2026-09-01T12:56:21.012Z",
   "sourceRevision": "local-working-tree",
   "checks": [
     {
@@ -35,24 +35,24 @@
       "name": "browser journeys",
       "command": "npm run e2e",
       "status": "passed",
-      "total": 3
+      "total": 4
     }
   ],
   "buildArtifacts": [
     {
-      "path": "dist/assets/index-Cds37gTh.css",
-      "bytes": 16570,
-      "sha256": "59ea7d90f6c8432d47989a0061d3d57f33fda0c98c9b8d32efec1cfa6170c806"
+      "path": "dist/assets/index-DAwyMSZR.js",
+      "bytes": 234454,
+      "sha256": "99621ba2ff97b25b2e29fb8cbbb4c8dc31109e5355ee37f38d932c8a7cddd040"
     },
     {
-      "path": "dist/assets/index-Cov1_wQX.js",
-      "bytes": 222001,
-      "sha256": "1d51822daff73e3d896202624571a35799da47d702dc337dd5e538efba5a6c96"
+      "path": "dist/assets/index-XHMc5vZS.css",
+      "bytes": 25532,
+      "sha256": "5cdc9b129e5462fa6ee02712161240136675125f13ee0676602af52c5a006762"
     },
     {
-      "path": "dist/assets/verifierWebmcp-CmACXLtZ.js",
+      "path": "dist/assets/verifierWebmcp-BihYtQog.js",
       "bytes": 2996,
-      "sha256": "7d8ce5dc0f563d52d8c3f27c5f1002a4c637001b7634d8bc0e977ffd2b045395"
+      "sha256": "2a2e4b33f0a89b97994d32cc2917f7c52ecc51e40922b651d9263711bed85a47"
     },
     {
       "path": "dist/assets/walletWebmcp-yepVDGDk.js",
@@ -67,7 +67,7 @@
     {
       "path": "dist/index.html",
       "bytes": 634,
-      "sha256": "fae501f4d81be68e2838a35eff541363bf987787fbdd9048cbd9c43476fcb4ad"
+      "sha256": "b8f89e1ab9f5704d1de233003285654c8c21dd7e7b435148961e925321ea5b48"
     }
   ]
 }

@@ -20,6 +20,8 @@ import {
   UserRoundCheck,
   Vault,
 } from 'lucide-react'
+import evalReceipt from '../artifacts/evals/scenario-results.json'
+import liveReceipt from '../artifacts/release/live-webmcp-verification.json'
 import {
   SCHOLARSHIP_AUDIENCE,
   SCHOLARSHIP_PURPOSE,
@@ -41,11 +43,20 @@ type ToolStatus = { supported: boolean; toolNames: string[] }
 type ToolManagerRef = ToolStatus & { sync: () => ToolStatus; dispose: () => void }
 type Trace = ProofTraceEvent & { id: number }
 type WalletStatus = 'no_request' | 'prepared' | 'consented' | 'exported' | 'revoked'
+const releaseChecks = [
+  { name: 'lint', command: 'npm run lint' },
+  { name: 'unit and contract tests', command: 'npm test' },
+  { name: 'judge scenarios', command: 'npm run eval' },
+  { name: 'production build', command: 'npm run build' },
+  { name: 'wallet/verifier bundle isolation', command: 'npm run verify:bundles' },
+  { name: 'browser journeys', command: 'npm run e2e' },
+] as const
 
 function App() {
   const path = window.location.pathname.replace(/\/+$/u, '') || '/'
   if (path === '/wallet') return <WalletPage />
   if (path === '/fellowship') return <FellowshipPage />
+  if (path === '/evidence') return <EvidencePage />
   return <LandingPage />
 }
 
@@ -63,7 +74,7 @@ function LandingPage() {
     <div className="site-shell landing-shell">
       <header className="site-header">
         <Brand context="WebMCP consent relay" />
-        <span className="prototype-note">Synthetic challenge prototype</span>
+        <div className="landing-header-actions"><a href="/evidence">Evidence room</a><span className="prototype-note">Synthetic challenge prototype</span></div>
       </header>
 
       <main>
@@ -76,6 +87,7 @@ function LandingPage() {
               <a className="primary-action" href="/fellowship" target="_blank">Open verifier <ExternalLink size={15} /></a>
               <a className="secondary-action" href="/wallet" target="_blank">Open private wallet <ExternalLink size={15} /></a>
             </div>
+            <a className="release-proof-link" href="/evidence"><BadgeCheck size={17} /><span><strong>Release proof passed</strong><small>Native WebMCP · 15/15 attacks · 3/3 browser journeys</small></span><ChevronRight size={15} /></a>
           </div>
 
           <div className="proof-route" aria-label="Private wallet to agent to verifier flow">
@@ -228,6 +240,7 @@ function WalletPage() {
                 {status === 'revoked' && <div className="consent-result revoked"><Ban size={19} /><div><strong>Disclosure revoked</strong><p>No proof was exported. Ask ChatGPT to prepare a fresh request if needed.</p></div></div>}
               </>
             )}
+            <CapabilityGate status={status} />
           </section>
 
           <aside className="agent-rail panel">
@@ -320,6 +333,7 @@ function FellowshipPage() {
 
           <section id="verification-result" className={`verification-panel panel verifier-${verifier.status}`}>
             <div className="panel-heading"><div><span>Proof checkpoint</span><h2>{verifierHeading(verifier.status)}</h2></div><ShieldCheck size={20} /></div>
+            <div className="human-boundary"><UserRoundCheck size={18} /><div><span>Permanent human boundary</span><strong>No consent or submission tool exists</strong></div><small>{verifier.status === 'verified' ? 'Human button unlocked' : 'Submission stays locked'}</small></div>
             {verifier.status === 'awaiting_proof' && <div className="empty-request"><Send size={34} /><strong>Waiting for the courier</strong><p>Ask ChatGPT to obtain a consented proof from the wallet tab and bring it here for verification.</p></div>}
             {verifier.status === 'rejected' && <div className="verification-error"><Ban size={21} /><div><strong>{verifier.result?.code}</strong><p>{verifier.result?.summary}</p></div></div>}
             {(verifier.status === 'verified' || verifier.status === 'submitted') && (
@@ -341,6 +355,102 @@ function FellowshipPage() {
         </div>
       </main>
       <footer><a href="/wallet" target="_blank">Open private wallet <ExternalLink size={13} /></a><span>All people, credentials, and applications are synthetic.</span></footer>
+    </div>
+  )
+}
+
+function EvidencePage() {
+  const livePassed = liveReceipt.export.status === 'passed' && liveReceipt.verification.status === 'passed'
+  const releasePassed = livePassed && evalReceipt.success
+
+  return (
+    <div className="site-shell evidence-page">
+      <header className="site-header">
+        <Brand context="Judge evidence room" />
+        <a className="evidence-open-demo" href="/fellowship" target="_blank">Open live flow <ExternalLink size={14} /></a>
+      </header>
+
+      <main className="evidence-main">
+        <section className="evidence-hero">
+          <div>
+            <p className="eyebrow"><ShieldCheck size={14} /> Inspectable release evidence</p>
+            <h1>Trust should be visible,<br /><em>not promised.</em></h1>
+            <p>These receipts connect the product claim to native WebMCP behavior, adversarial tests, browser journeys, and the exact limits of what was verified.</p>
+          </div>
+          <div className={`release-seal ${livePassed && releasePassed ? 'passed' : ''}`}>
+            <BadgeCheck size={34} />
+            <span>Release gate</span>
+            <strong>{releasePassed ? 'PASSED' : 'REVIEW'}</strong>
+            <small>Captured {new Date(liveReceipt.capturedAt).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}</small>
+          </div>
+        </section>
+
+        <section className="evidence-metrics" aria-label="Release evidence summary">
+          <article><strong>{evalReceipt.passed}/{evalReceipt.total}</strong><span>adversarial scenarios</span><small>Audience, purpose, expiry, replay, tampering, authority</small></article>
+          <article><strong>4/4</strong><span>browser journeys</span><small>Cross-tab flow, recovery, evidence, 390px viewport</small></article>
+          <article><strong>5 → 0</strong><span>claims to private fields</span><small>Only derived eligibility crosses the boundary</small></article>
+          <article><strong>0 → 1 → 0</strong><span>export capability</span><small>Absent, human-unlocked, then withdrawn</small></article>
+        </section>
+
+        <section className="evidence-section lifecycle-evidence">
+          <div className="evidence-section-heading"><div><p className="section-kicker">Native WebMCP proof</p><h2>A capability that lives for exactly one call.</h2></div><p>Captured across two separate live tabs in the OpenAI Codex in-app browser. The page adds and removes the actual WebMCP tool as authority changes.</p></div>
+          <div className="capability-timeline">
+            <article><span>01 · Before consent</span><strong>ABSENT</strong><code>wallet_export_proof</code><p>The agent can prepare a disclosure, but it cannot export one.</p></article>
+            <div className="timeline-arrow"><ChevronRight size={20} /><small>human click</small></div>
+            <article className="capability-live"><span>02 · Approved</span><strong>LIVE</strong><code>wallet_export_proof</code><p>One purpose-bound export becomes available. No broader wallet access.</p></article>
+            <div className="timeline-arrow"><ChevronRight size={20} /><small>one call</small></div>
+            <article><span>03 · Exported</span><strong>WITHDRAWN</strong><code>wallet_get_disclosure_receipt</code><p>The export tool disappears and only a safe receipt remains.</p></article>
+          </div>
+          <div className="live-receipt-line"><BadgeCheck size={18} /><strong>Live receipt confirms:</strong><span>before {String(liveReceipt.export.exportCapabilityPresentBeforeHumanConsent)}</span><span>after consent {String(liveReceipt.export.exportCapabilityPresentAfterHumanConsent)}</span><span>after export {String(liveReceipt.export.exportCapabilityPresentAfterExport)}</span></div>
+        </section>
+
+        <section className="evidence-grid">
+          <article className="evidence-card verifier-proof-card">
+            <p className="section-kicker">Verifier receipt</p>
+            <h2>Five claims arrived. Zero records arrived.</h2>
+            <ul>
+              <li><Check size={15} />Issuer and holder binding verified</li>
+              <li><Check size={15} />Audience, purpose, expiry, and nonce verified</li>
+              <li><Check size={15} />Private fields disclosed: {liveReceipt.export.privateFieldsDisclosed.length}</li>
+              <li><Check size={15} />Private fields received: {liveReceipt.verification.privateFieldsReceived.length}</li>
+              <li><Check size={15} />Agent submission capability: absent</li>
+            </ul>
+            <div className="human-proof"><UserRoundCheck size={18} /><span><strong>The agent prepares.</strong> The person consents and submits.</span></div>
+          </article>
+
+          <article className="evidence-card eval-card">
+            <p className="section-kicker">Adversarial judge suite</p>
+            <h2>{evalReceipt.passed} attacks and boundary checks passed.</h2>
+            <div className="eval-list">{evalReceipt.scenarios.map((scenario) => <div key={scenario.id}><span>{scenario.id}</span><p>{scenario.title}</p><BadgeCheck size={15} /></div>)}</div>
+          </article>
+        </section>
+
+        <section className="evidence-section release-checks">
+          <div className="evidence-section-heading"><div><p className="section-kicker">Release gate</p><h2>Every claim has a corresponding check.</h2></div><p>Executed together by <code>npm run verify</code>. The machine-readable release receipt remains outside the app bundle so its artifact hashes are not self-referential. Public evidence is a test receipt, not a security certification.</p></div>
+          <div className="release-check-grid">{releaseChecks.map((check) => <article key={check.name}><BadgeCheck size={18} /><div><strong>{check.name}</strong><code>{check.command}</code></div><span>passed</span></article>)}</div>
+        </section>
+
+        <section className="evidence-limitations">
+          <ShieldCheck size={22} />
+          <div><p className="section-kicker">Truthful boundary</p><h2>What this evidence does not claim</h2><ul>{liveReceipt.limitations.map((item) => <li key={item}>{item}</li>)}</ul></div>
+          <div className="source-receipt"><span>Verified source</span><code>{liveReceipt.sourceCommit.slice(0, 12)}</code><span>Deployment</span><code>{liveReceipt.deploymentId}</code></div>
+        </section>
+
+        <section className="evidence-cta"><div><p className="section-kicker">Run the proof</p><h2>Open both sites and watch authority change.</h2></div><div className="hero-actions"><a className="primary-action" href="/fellowship" target="_blank">Open verifier <ExternalLink size={15} /></a><a className="secondary-action" href="/wallet" target="_blank">Open wallet <ExternalLink size={15} /></a></div></section>
+      </main>
+
+      <footer><span>Proof Courier · Evidence room</span><span>Receipts are bundled from the public repository and contain synthetic data only.</span></footer>
+    </div>
+  )
+}
+
+function CapabilityGate({ status }: { status: WalletStatus }) {
+  const state = status === 'consented' ? 'live' : status === 'exported' ? 'withdrawn' : status === 'revoked' ? 'revoked' : 'absent'
+  const label = state === 'live' ? 'LIVE FOR ONE CALL' : state === 'withdrawn' ? 'WITHDRAWN AFTER USE' : state === 'revoked' ? 'REVOKED' : 'ABSENT UNTIL CONSENT'
+  return (
+    <div className={`capability-gate capability-${state}`}>
+      <div><KeyRound size={16} /><span>Dynamic capability</span><code>wallet_export_proof</code></div>
+      <strong>{label}</strong>
     </div>
   )
 }

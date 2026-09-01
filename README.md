@@ -8,6 +8,8 @@ The final application submission remains a human-only button.
 
 **Live app:** [proof-courier-orcin.vercel.app](https://proof-courier-orcin.vercel.app)
 
+**Judge evidence room:** [proof-courier-orcin.vercel.app/evidence](https://proof-courier-orcin.vercel.app/evidence)
+
 ## Why WebMCP
 
 This is not a chatbot placed beside a form. The verifier and wallet are separate pages with independent, state-aware tool surfaces. The agent must coordinate their live page state:
@@ -73,7 +75,9 @@ There is deliberately no tool whose name or behavior can consent, approve, or su
 npm run verify
 ```
 
-The release gate runs lint, unit and contract tests, 15 named adversarial judge scenarios, a production build, wallet/verifier runtime-isolation checks, and three browser journeys. It writes machine-readable evidence to:
+The public `/evidence` route turns the release receipts into an inspectable judge surface: native WebMCP lifecycle proof, 15 adversarial scenarios, four browser journeys, bundle isolation, exact source/deployment identifiers, and explicit limitations.
+
+The release gate runs lint, unit and contract tests, 15 named adversarial judge scenarios, a production build, wallet/verifier runtime-isolation checks, and four browser journeys. It writes machine-readable evidence to:
 
 - `artifacts/evals/scenario-results.json`
 - `artifacts/e2e/results.json`
