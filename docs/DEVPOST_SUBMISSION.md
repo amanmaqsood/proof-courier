@@ -55,5 +55,5 @@ React, TypeScript, WebMCP (`document.modelContext.registerTool`), Web Crypto, Vi
 ## Links to add after verification
 
 - Live app: https://proof-courier-orcin.vercel.app
-- Public repository: [pending clean public push]
+- Public repository: https://github.com/amanmaqsood/proof-courier
 - Demo video: [pending real ChatGPT recording]
