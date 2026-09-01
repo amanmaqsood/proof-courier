@@ -289,6 +289,7 @@ code { padding: 1px 4px; overflow-wrap: anywhere; color: var(--blue); background
 .timeline-arrow small { color: var(--muted); font: 8px var(--mono); }
 .live-receipt-line { margin-top: 28px; padding: 14px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; color: #135e48; border: 1px solid #69a68f; background: var(--green-soft); font-size: 10px; }
 .live-receipt-line span { font: 9px var(--mono); }
+.live-receipt-line a { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--blue); font-size: 9px; font-weight: 800; text-decoration: none; }
 .evidence-grid { margin-top: 72px; display: grid; grid-template-columns: .82fr 1.18fr; gap: 24px; align-items: start; }
 .evidence-card { padding: 36px; border: 1px solid var(--ink); background: var(--paper); }
 .evidence-card h2 { font-size: clamp(27px, 3.2vw, 43px); }
@@ -316,7 +317,7 @@ code { padding: 1px 4px; overflow-wrap: anywhere; color: var(--blue); background
 .evidence-limitations ul { margin: 20px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 10px; line-height: 1.55; }
 .source-receipt { padding: 16px; display: grid; gap: 7px; border: 1px solid #efb4a4; background: rgba(255,255,255,.35); }
 .source-receipt span { font: 8px var(--mono); text-transform: uppercase; }
-.source-receipt code { overflow-wrap: anywhere; color: #87412f; background: white; }
+.source-receipt a { padding: 8px 9px; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--blue); background: white; font-size: 9px; font-weight: 800; text-decoration: none; }
 .evidence-cta { margin-top: 72px; padding: 44px; display: flex; align-items: end; justify-content: space-between; gap: 36px; color: white; background: var(--ink); }
 .evidence-cta .section-kicker { color: var(--yellow); }
 .evidence-cta h2 { max-width: 650px; }

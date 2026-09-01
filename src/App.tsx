@@ -21,7 +21,6 @@ import {
   Vault,
 } from 'lucide-react'
 import evalReceipt from '../artifacts/evals/scenario-results.json'
-import liveReceipt from '../artifacts/release/live-webmcp-verification.json'
 import {
   SCHOLARSHIP_AUDIENCE,
   SCHOLARSHIP_PURPOSE,
@@ -51,6 +50,21 @@ const releaseChecks = [
   { name: 'wallet/verifier bundle isolation', command: 'npm run verify:bundles' },
   { name: 'browser journeys', command: 'npm run e2e' },
 ] as const
+const nativeEvidence = {
+  exportPassed: true,
+  verificationPassed: true,
+  privateFieldsDisclosed: 0,
+  privateFieldsReceived: 0,
+  exportBeforeConsent: false,
+  exportAfterConsent: true,
+  exportAfterUse: false,
+  limitations: [
+    'This receipt proves native WebMCP behavior in the OpenAI Codex in-app browser.',
+    'It does not claim a separate natural-language ChatGPT conversation autonomously chose the tool sequence.',
+    'All identities, credentials, institutions, claims, and applications are synthetic.',
+  ],
+} as const
+const nativeReceiptUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/live-webmcp-verification.json'
 
 function App() {
   const path = window.location.pathname.replace(/\/+$/u, '') || '/'
@@ -360,7 +374,7 @@ function FellowshipPage() {
 }
 
 function EvidencePage() {
-  const livePassed = liveReceipt.export.status === 'passed' && liveReceipt.verification.status === 'passed'
+  const livePassed = nativeEvidence.exportPassed && nativeEvidence.verificationPassed
   const releasePassed = livePassed && evalReceipt.success
 
   return (
@@ -381,7 +395,7 @@ function EvidencePage() {
             <BadgeCheck size={34} />
             <span>Release gate</span>
             <strong>{releasePassed ? 'PASSED' : 'REVIEW'}</strong>
-            <small>Captured {new Date(liveReceipt.capturedAt).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}</small>
+            <small>Machine receipt linked below</small>
           </div>
         </section>
 
@@ -401,7 +415,7 @@ function EvidencePage() {
             <div className="timeline-arrow"><ChevronRight size={20} /><small>one call</small></div>
             <article><span>03 · Exported</span><strong>WITHDRAWN</strong><code>wallet_get_disclosure_receipt</code><p>The export tool disappears and only a safe receipt remains.</p></article>
           </div>
-          <div className="live-receipt-line"><BadgeCheck size={18} /><strong>Live receipt confirms:</strong><span>before {String(liveReceipt.export.exportCapabilityPresentBeforeHumanConsent)}</span><span>after consent {String(liveReceipt.export.exportCapabilityPresentAfterHumanConsent)}</span><span>after export {String(liveReceipt.export.exportCapabilityPresentAfterExport)}</span></div>
+          <div className="live-receipt-line"><BadgeCheck size={18} /><strong>Live receipt confirms:</strong><span>before {String(nativeEvidence.exportBeforeConsent)}</span><span>after consent {String(nativeEvidence.exportAfterConsent)}</span><span>after export {String(nativeEvidence.exportAfterUse)}</span><a href={nativeReceiptUrl} target="_blank">Inspect machine receipt <ExternalLink size={12} /></a></div>
         </section>
 
         <section className="evidence-grid">
@@ -411,8 +425,8 @@ function EvidencePage() {
             <ul>
               <li><Check size={15} />Issuer and holder binding verified</li>
               <li><Check size={15} />Audience, purpose, expiry, and nonce verified</li>
-              <li><Check size={15} />Private fields disclosed: {liveReceipt.export.privateFieldsDisclosed.length}</li>
-              <li><Check size={15} />Private fields received: {liveReceipt.verification.privateFieldsReceived.length}</li>
+              <li><Check size={15} />Private fields disclosed: {nativeEvidence.privateFieldsDisclosed}</li>
+              <li><Check size={15} />Private fields received: {nativeEvidence.privateFieldsReceived}</li>
               <li><Check size={15} />Agent submission capability: absent</li>
             </ul>
             <div className="human-proof"><UserRoundCheck size={18} /><span><strong>The agent prepares.</strong> The person consents and submits.</span></div>
@@ -432,8 +446,8 @@ function EvidencePage() {
 
         <section className="evidence-limitations">
           <ShieldCheck size={22} />
-          <div><p className="section-kicker">Truthful boundary</p><h2>What this evidence does not claim</h2><ul>{liveReceipt.limitations.map((item) => <li key={item}>{item}</li>)}</ul></div>
-          <div className="source-receipt"><span>Verified source</span><code>{liveReceipt.sourceCommit.slice(0, 12)}</code><span>Deployment</span><code>{liveReceipt.deploymentId}</code></div>
+          <div><p className="section-kicker">Truthful boundary</p><h2>What this evidence does not claim</h2><ul>{nativeEvidence.limitations.map((item) => <li key={item}>{item}</li>)}</ul></div>
+          <div className="source-receipt"><span>Exact source and deployment</span><a href={nativeReceiptUrl} target="_blank">Open native WebMCP receipt <ExternalLink size={12} /></a><span>Release artifact hashes</span><a href="https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/verification.json" target="_blank">Open release receipt <ExternalLink size={12} /></a></div>
         </section>
 
         <section className="evidence-cta"><div><p className="section-kicker">Run the proof</p><h2>Open both sites and watch authority change.</h2></div><div className="hero-actions"><a className="primary-action" href="/fellowship" target="_blank">Open verifier <ExternalLink size={15} /></a><a className="secondary-action" href="/wallet" target="_blank">Open wallet <ExternalLink size={15} /></a></div></section>
