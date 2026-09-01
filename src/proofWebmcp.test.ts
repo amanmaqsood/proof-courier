@@ -44,7 +44,7 @@ describe('Proof Courier WebMCP collaboration', () => {
       focusConsent: () => undefined,
     })
 
-    expect([...tools.keys()]).toEqual(['wallet_get_summary', 'wallet_prepare_disclosure', 'wallet_get_consent_state'])
+    expect([...tools.keys()]).toEqual(['wallet_get_summary', 'wallet_prepare_disclosure', 'wallet_get_disclosure_state'])
     expect(tools.has('wallet_export_proof')).toBe(false)
     const summary = await tools.get('wallet_get_summary')!.execute({})
     expect(JSON.stringify(summary)).not.toContain('Maya Rahman')

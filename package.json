@@ -8,6 +8,9 @@
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "eval": "vitest run src/evals/proofCourier.evals.test.ts --reporter=json --outputFile=artifacts/evals/.vitest-results.json && node scripts/write-eval-receipt.mjs",
+    "eval:webmcp:wallet": "webmcp-evals smoke -u http://127.0.0.1:5173/wallet -e evals/webmcp/wallet-smoke.json --chrome-channel chrome -v",
+    "eval:webmcp:verifier": "webmcp-evals smoke -u http://127.0.0.1:5173/fellowship -e evals/webmcp/verifier-smoke.json --chrome-channel chrome -v",
+    "eval:webmcp": "node scripts/run-webmcp-smoke.mjs",
     "e2e": "playwright test",
     "verify:bundles": "node scripts/verify-bundle-isolation.mjs",
     "verify": "npm run lint && npm test && npm run eval && npm run build && npm run verify:bundles && npm run e2e && node scripts/write-verification-receipt.mjs",
@@ -36,6 +39,7 @@
     "jsdom": "30.0.1",
     "typescript": "6.0.3",
     "vite": "8.2.2",
-    "vitest": "4.1.11"
+    "vitest": "4.1.11",
+    "webmcp-evals": "0.0.4"
   }
 }

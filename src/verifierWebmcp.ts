@@ -18,7 +18,7 @@ export function registerVerifierTools(bridge: {
       name: 'fellowship_get_requirements',
       description: 'Reads the fellowship verifier audience, purpose, nonce, minimum derived claims, prohibited private fields, and human-only submission boundary.',
       inputSchema: emptySchema,
-      annotations: { readOnlyHint: true },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
       execute: () => result('Five minimum claims are required; raw records are prohibited.', getScholarshipRequest()),
     },
     {
@@ -30,6 +30,7 @@ export function registerVerifierTools(bridge: {
         required: ['proofBundle'],
         additionalProperties: false,
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
       execute: async ({ proofBundle }: Record<string, unknown>) => {
         const current = bridge.getState()
         let bundle: ProofBundle
@@ -61,14 +62,14 @@ export function registerVerifierTools(bridge: {
       name: 'fellowship_get_verification_state',
       description: 'Reads whether a proof passed and whether the person may now submit the synthetic application.',
       inputSchema: emptySchema,
-      annotations: { readOnlyHint: true },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
       execute: () => result('Current verifier state.', safeVerifierView(bridge.getState())),
     },
     {
       name: 'fellowship_get_verification_receipt',
       description: 'Reads the accepted proof receipt after verification or human submission. It contains no private source values.',
       inputSchema: emptySchema,
-      annotations: { readOnlyHint: true },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
       execute: () => {
         const current = bridge.getState()
         if (!current.result?.accepted || !current.proof) throw new Error('No accepted verification receipt exists.')

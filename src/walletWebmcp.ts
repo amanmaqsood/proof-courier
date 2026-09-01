@@ -22,8 +22,8 @@ export function registerWalletTools(bridge: {
       name: 'wallet_get_summary',
       description: 'Reads a privacy-safe summary of the synthetic credential wallet without returning private source values.',
       inputSchema: emptySchema,
-      annotations: { readOnlyHint: true, untrustedContentHint: true },
-      execute: () => result('Private values remain inside the wallet.', getWalletSummary()),
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false, untrustedContentHint: true },
+      execute: () => result('Private values remain inside the wallet.', { ...getWalletSummary(), version: bridge.getState().version }),
     },
     {
       name: 'wallet_prepare_disclosure',
@@ -31,15 +31,16 @@ export function registerWalletTools(bridge: {
       inputSchema: {
         type: 'object',
         properties: {
-          audience: { type: 'string', enum: [SCHOLARSHIP_AUDIENCE] },
-          purpose: { type: 'string', enum: [SCHOLARSHIP_PURPOSE] },
-          claimIds: { type: 'array', items: { type: 'string', enum: scholarshipRequirements.map((item) => item.id) }, minItems: 5, maxItems: 5, uniqueItems: true },
-          nonce: { type: 'string', minLength: 8, maxLength: 80 },
-          expectedVersion: { type: 'number' },
+          audience: { type: 'string', enum: [SCHOLARSHIP_AUDIENCE], description: 'Exact verifier audience returned by fellowship_get_requirements.' },
+          purpose: { type: 'string', enum: [SCHOLARSHIP_PURPOSE], description: 'Exact purpose returned by fellowship_get_requirements; it binds consent to this eligibility check.' },
+          claimIds: { type: 'array', items: { type: 'string', enum: scholarshipRequirements.map((item) => item.id) }, minItems: 5, maxItems: 5, uniqueItems: true, description: 'Exactly the five minimum derived claim identifiers published by the fellowship verifier; never include raw private fields.' },
+          nonce: { type: 'string', minLength: 8, maxLength: 80, description: 'Fresh verifier nonce returned by fellowship_get_requirements; it prevents proof replay.' },
+          expectedVersion: { type: 'number', description: 'Current wallet version returned by wallet_get_summary or wallet_get_disclosure_state.' },
         },
         required: ['audience', 'purpose', 'claimIds', 'nonce', 'expectedVersion'],
         additionalProperties: false,
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
       execute: ({ audience, purpose, claimIds, nonce, expectedVersion }: Record<string, unknown>) => {
         const current = bridge.getState()
         requireVersion(current.version, Number(expectedVersion))
@@ -66,10 +67,10 @@ export function registerWalletTools(bridge: {
       },
     },
     {
-      name: 'wallet_get_consent_state',
-      description: 'Reads which derived claims are prepared, whether a person consented, and whether export is currently available.',
+      name: 'wallet_get_disclosure_state',
+      description: 'Read-only. Reports which derived claims are prepared, whether a person consented, and whether export is currently available; it never changes consent or exports proof.',
       inputSchema: emptySchema,
-      annotations: { readOnlyHint: true },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
       execute: () => result('Current wallet consent state.', safeConsentView(bridge.getState())),
     },
     {
@@ -77,10 +78,11 @@ export function registerWalletTools(bridge: {
       description: 'Exports the one-time purpose-bound proof only after the person approved the exact disclosure in the wallet UI.',
       inputSchema: {
         type: 'object',
-        properties: { expectedVersion: { type: 'number' } },
+        properties: { expectedVersion: { type: 'number', description: 'Current wallet version returned after the person approved the visible disclosure.' } },
         required: ['expectedVersion'],
         additionalProperties: false,
       },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
       execute: async ({ expectedVersion }: Record<string, unknown>) => {
         const current = bridge.getState()
         requireVersion(current.version, Number(expectedVersion))
@@ -109,7 +111,7 @@ export function registerWalletTools(bridge: {
       name: 'wallet_get_disclosure_receipt',
       description: 'Reads the human consent and one-time export receipt without returning the proof token or private values.',
       inputSchema: emptySchema,
-      annotations: { readOnlyHint: true },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
       execute: () => {
         const current = bridge.getState()
         if (!current.draft || current.draft.status !== 'exported') throw new Error('No disclosure receipt exists yet.')
@@ -131,7 +133,7 @@ export function registerWalletTools(bridge: {
     tools,
     () => {
       const status = bridge.getState().draft?.status
-      const base = ['wallet_get_summary', 'wallet_prepare_disclosure', 'wallet_get_consent_state']
+      const base = ['wallet_get_summary', 'wallet_prepare_disclosure', 'wallet_get_disclosure_state']
       if (status === 'consented') return [...base, 'wallet_export_proof']
       if (status === 'exported') return [...base, 'wallet_get_disclosure_receipt']
       return base

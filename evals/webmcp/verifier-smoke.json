@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Verifier publishes minimum requirements and keeps submission human-only",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Read the fellowship requirements and current verification state without submitting anything."
+      }
+    ],
+    "expectedCall": [
+      { "functionName": "fellowship_get_requirements", "arguments": {} },
+      { "functionName": "fellowship_get_verification_state", "arguments": {} }
+    ]
+  }
+]

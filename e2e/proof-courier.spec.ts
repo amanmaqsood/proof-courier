@@ -52,7 +52,7 @@ test('human consent unlocks one cross-tab proof and keeps final submission human
     'fellowship_get_requirements', 'fellowship_verify_proof', 'fellowship_get_verification_state',
   ])
   await expect.poll(() => toolNames(wallet)).toEqual([
-    'wallet_get_summary', 'wallet_prepare_disclosure', 'wallet_get_consent_state',
+    'wallet_get_summary', 'wallet_prepare_disclosure', 'wallet_get_disclosure_state',
   ])
 
   const request = await callTool(fellowship, 'fellowship_get_requirements', {}) as {

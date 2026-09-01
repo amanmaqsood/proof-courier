@@ -2,6 +2,15 @@
 
 Proof Courier is evaluated as a capability system, not as a visual demo. A valid presentation must pass every relevant cryptographic and policy check; a failed check must remain visible and must not unlock human submission.
 
+## Independent WebMCP checks
+
+Proof Courier also carries two supplemental checks that use third-party WebMCP tooling:
+
+- `artifacts/evals/third-party/nekuda-wallet-audit.json` is the raw wallet audit exported by nekuda WebMCP Workbench 1.2.2. It scored 100/100 with no findings after schema and naming fixes.
+- `npm run eval:webmcp` starts a temporary local app when needed, then runs the pinned GoogleChromeLabs `webmcp-evals` 0.0.4 smoke runner against the wallet and verifier. This layer directly discovers and executes live page tools without an LLM or API key.
+
+These are supplemental checks, not certifications. The project-owned adversarial and Playwright suites remain the release gate because they cover the two-tab consent lifecycle and negative cases that a fresh-page smoke runner cannot represent.
+
 ## Release gates
 
 | Gate | Command | Evidence |

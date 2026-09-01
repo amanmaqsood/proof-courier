@@ -34,6 +34,28 @@ A visible human UI action that dynamically makes one export capability available
 
 A privacy-safe record that the proof was exported or verified. It contains claim identifiers, not private source values.
 
+## Agent journey language
+
+**Answer tool**
+
+A read-only capability that reports requirements, wallet state, or receipts without changing authority or releasing proof.
+_Avoid_: Info endpoint, getter
+
+**Action tool**
+
+A capability that prepares or verifies bounded proof while keeping consent and final submission with the holder.
+_Avoid_: Automation button, API wrapper
+
+**Sensitive disclosure capability**
+
+The one-time export capability that exists only after visible, purpose-bound holder consent and disappears after use.
+_Avoid_: Export endpoint, always-on permission
+
+**Human-only outcome**
+
+The consequential application submission that no WebMCP tool can perform.
+_Avoid_: Agent submission, automatic filing
+
 ## State transitions
 
 Wallet: `no_request → prepared → consented → exported`, or `prepared/consented → revoked`.

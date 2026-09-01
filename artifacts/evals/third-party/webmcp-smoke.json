@@ -1,0 +1,215 @@
+{
+  "generatedAt": "2026-09-01T17:44:19.955Z",
+  "runner": "GoogleChromeLabs webmcp-evals 0.0.4",
+  "mode": "smoke (direct live tool execution; no LLM or API key)",
+  "passedSteps": 5,
+  "totalSteps": 5,
+  "errorCount": 0,
+  "runs": [
+    {
+      "name": "wallet",
+      "url": "http://127.0.0.1:5173/wallet",
+      "evals": "evals/webmcp/wallet-smoke.json",
+      "results": [
+        {
+          "functionName": "wallet_get_summary",
+          "arguments": {},
+          "stepIndex": 1,
+          "testName": "Wallet exposes a safe summary and prepares only the minimum disclosure",
+          "outcome": "pass",
+          "result": {
+            "summary": "Private values remain inside the wallet.",
+            "data": {
+              "issuer": "Openbridge University Demo Registry",
+              "validUntil": "2027-08-15T00:00:00.000Z",
+              "privateFields": [
+                "Exact date of birth",
+                "Student ID",
+                "Exact GPA",
+                "Full transcript",
+                "Home address"
+              ],
+              "availableDerivedClaims": [
+                {
+                  "id": "age_over_18",
+                  "label": "Applicant is at least 18"
+                },
+                {
+                  "id": "active_enrollment",
+                  "label": "Currently enrolled"
+                },
+                {
+                  "id": "study_field",
+                  "label": "Studies an eligible field"
+                },
+                {
+                  "id": "gpa_band",
+                  "label": "GPA is 3.5 or above"
+                },
+                {
+                  "id": "residency_eligible",
+                  "label": "Meets residency rule"
+                }
+              ],
+              "warning": "Private source values stay in this wallet. Export requires a visible human consent action.",
+              "version": 1
+            }
+          }
+        },
+        {
+          "functionName": "wallet_prepare_disclosure",
+          "arguments": {
+            "audience": "openbridge-scholarship-2026",
+            "purpose": "Verify minimum eligibility for the Open Web Fellowship.",
+            "claimIds": [
+              "age_over_18",
+              "active_enrollment",
+              "study_field",
+              "gpa_band",
+              "residency_eligible"
+            ],
+            "nonce": "request-OWF-2026-001",
+            "expectedVersion": 1
+          },
+          "stepIndex": 2,
+          "testName": "Wallet exposes a safe summary and prepares only the minimum disclosure",
+          "outcome": "pass",
+          "result": {
+            "summary": "Five derived claims prepared. Waiting for visible human consent.",
+            "data": {
+              "version": 2,
+              "status": "prepared",
+              "audience": "openbridge-scholarship-2026",
+              "purpose": "Verify minimum eligibility for the Open Web Fellowship.",
+              "claimIds": [
+                "age_over_18",
+                "active_enrollment",
+                "study_field",
+                "gpa_band",
+                "residency_eligible"
+              ],
+              "expiresAt": "2026-09-01T17:54:17.529Z",
+              "exportAvailable": false,
+              "privateFieldsDisclosed": [],
+              "humanActionRequired": true
+            }
+          }
+        },
+        {
+          "functionName": "wallet_get_disclosure_state",
+          "arguments": {},
+          "stepIndex": 3,
+          "testName": "Wallet exposes a safe summary and prepares only the minimum disclosure",
+          "outcome": "pass",
+          "result": {
+            "summary": "Current wallet consent state.",
+            "data": {
+              "version": 2,
+              "status": "prepared",
+              "audience": "openbridge-scholarship-2026",
+              "purpose": "Verify minimum eligibility for the Open Web Fellowship.",
+              "claimIds": [
+                "age_over_18",
+                "active_enrollment",
+                "study_field",
+                "gpa_band",
+                "residency_eligible"
+              ],
+              "expiresAt": "2026-09-01T17:54:17.529Z",
+              "exportAvailable": false,
+              "privateFieldsDisclosed": [],
+              "humanActionRequired": true
+            }
+          }
+        }
+      ],
+      "testCount": 1,
+      "passCount": 3,
+      "errorCount": 0,
+      "totalExpectedSteps": 3
+    },
+    {
+      "name": "verifier",
+      "url": "http://127.0.0.1:5173/fellowship",
+      "evals": "evals/webmcp/verifier-smoke.json",
+      "results": [
+        {
+          "functionName": "fellowship_get_requirements",
+          "arguments": {},
+          "stepIndex": 1,
+          "testName": "Verifier publishes minimum requirements and keeps submission human-only",
+          "outcome": "pass",
+          "result": {
+            "summary": "Five minimum claims are required; raw records are prohibited.",
+            "data": {
+              "audience": "openbridge-scholarship-2026",
+              "purpose": "Verify minimum eligibility for the Open Web Fellowship.",
+              "nonce": "request-OWF-2026-001",
+              "requiredClaims": [
+                {
+                  "id": "age_over_18",
+                  "label": "Applicant is at least 18",
+                  "expectedValue": true,
+                  "privateAlternative": "Exact date of birth"
+                },
+                {
+                  "id": "active_enrollment",
+                  "label": "Currently enrolled",
+                  "expectedValue": true,
+                  "privateAlternative": "Full enrollment record"
+                },
+                {
+                  "id": "study_field",
+                  "label": "Studies an eligible field",
+                  "expectedValue": "computer_science",
+                  "privateAlternative": "Complete transcript"
+                },
+                {
+                  "id": "gpa_band",
+                  "label": "GPA is 3.5 or above",
+                  "expectedValue": "3.5_or_above",
+                  "privateAlternative": "Exact GPA and grades"
+                },
+                {
+                  "id": "residency_eligible",
+                  "label": "Meets residency rule",
+                  "expectedValue": true,
+                  "privateAlternative": "Home address"
+                }
+              ],
+              "prohibitedClaims": [
+                "date_of_birth",
+                "student_id",
+                "exact_gpa",
+                "full_transcript",
+                "home_address"
+              ],
+              "finalBoundary": "Only the person can submit the application."
+            }
+          }
+        },
+        {
+          "functionName": "fellowship_get_verification_state",
+          "arguments": {},
+          "stepIndex": 2,
+          "testName": "Verifier publishes minimum requirements and keeps submission human-only",
+          "outcome": "pass",
+          "result": {
+            "summary": "Current verifier state.",
+            "data": {
+              "version": 1,
+              "status": "awaiting_proof",
+              "accepted": false,
+              "privateFieldsReceived": [],
+              "humanSubmissionAvailable": false
+            }
+          }
+        }
+      ],
+      "testCount": 1,
+      "passCount": 2,
+      "errorCount": 0,
+      "totalExpectedSteps": 2
+    }
+  ]
+}

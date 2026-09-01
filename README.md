@@ -56,7 +56,7 @@ Wallet tools:
 
 - `wallet_get_summary` — privacy-safe credential summary
 - `wallet_prepare_disclosure` — stages the exact five claims for review
-- `wallet_get_consent_state` — reads consent and export availability
+- `wallet_get_disclosure_state` — reads consent and export availability without changing either
 - `wallet_export_proof` — dynamically appears after human consent, then disappears after one export
 - `wallet_get_disclosure_receipt` — dynamically appears after export
 
@@ -83,6 +83,11 @@ The release gate runs lint, unit and contract tests, 15 named adversarial judge 
 - `artifacts/e2e/results.json`
 - `artifacts/release/verification.json`
 - `artifacts/release/live-webmcp-verification.json` — one authorized native WebMCP run across the deployed wallet and verifier
+
+Two independent, supplemental checks are also reproducible:
+
+- `npm run eval:webmcp` discovers and directly executes five live page-tool steps with GoogleChromeLabs `webmcp-evals` 0.0.4, without an LLM or API key.
+- `artifacts/evals/third-party/nekuda-wallet-audit.json` is the raw 100/100, zero-finding wallet audit exported from nekuda WebMCP Workbench 1.2.2.
 
 The main implementation is in:
 

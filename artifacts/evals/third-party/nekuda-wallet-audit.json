@@ -1,0 +1,11 @@
+{
+  "score": 100,
+  "generatedAt": 1788283863070,
+  "findings": [],
+  "groups": {
+    "definitions": 25,
+    "schemas": 35,
+    "toolset": 20,
+    "safety": 20
+  }
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Wallet exposes a safe summary and prepares only the minimum disclosure",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Read my privacy-safe wallet summary, prepare exactly the verifier's five minimum claims, and stop for my consent."
+      }
+    ],
+    "expectedCall": [
+      { "functionName": "wallet_get_summary", "arguments": {} },
+      {
+        "functionName": "wallet_prepare_disclosure",
+        "arguments": {
+          "audience": "openbridge-scholarship-2026",
+          "purpose": "Verify minimum eligibility for the Open Web Fellowship.",
+          "claimIds": [
+            "age_over_18",
+            "active_enrollment",
+            "study_field",
+            "gpa_band",
+            "residency_eligible"
+          ],
+          "nonce": "request-OWF-2026-001",
+          "expectedVersion": 1
+        }
+      },
+      { "functionName": "wallet_get_disclosure_state", "arguments": {} }
+    ]
+  }
+]
