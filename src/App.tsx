@@ -21,6 +21,8 @@ import {
   Vault,
 } from 'lucide-react'
 import evalReceipt from '../artifacts/evals/scenario-results.json'
+import nekudaAudit from '../artifacts/evals/third-party/nekuda-wallet-audit.json'
+import webmcpSmoke from '../artifacts/evals/third-party/webmcp-smoke.json'
 import {
   SCHOLARSHIP_AUDIENCE,
   SCHOLARSHIP_PURPOSE,
@@ -65,6 +67,8 @@ const nativeEvidence = {
   ],
 } as const
 const nativeReceiptUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/live-webmcp-verification.json'
+const workbenchAuditUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/evals/third-party/nekuda-wallet-audit.json'
+const webmcpSmokeUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/evals/third-party/webmcp-smoke.json'
 
 function App() {
   const path = window.location.pathname.replace(/\/+$/u, '') || '/'
@@ -101,7 +105,7 @@ function LandingPage() {
               <a className="primary-action" href="/fellowship" target="_blank">Open verifier <ExternalLink size={15} /></a>
               <a className="secondary-action" href="/wallet" target="_blank">Open private wallet <ExternalLink size={15} /></a>
             </div>
-            <a className="release-proof-link" href="/evidence"><BadgeCheck size={17} /><span><strong>Release proof passed</strong><small>Native WebMCP · 15/15 attacks · 3/3 browser journeys</small></span><ChevronRight size={15} /></a>
+            <a className="release-proof-link" href="/evidence"><BadgeCheck size={17} /><span><strong>Release proof passed</strong><small>Native WebMCP · 15/15 attacks · 4/4 browser journeys · 100/100 audit</small></span><ChevronRight size={15} /></a>
           </div>
 
           <div className="proof-route" aria-label="Private wallet to agent to verifier flow">
@@ -389,7 +393,7 @@ function EvidencePage() {
           <div>
             <p className="eyebrow"><ShieldCheck size={14} /> Inspectable release evidence</p>
             <h1>Trust should be visible,<br /><em>not promised.</em></h1>
-            <p>These receipts connect the product claim to native WebMCP behavior, adversarial tests, browser journeys, and the exact limits of what was verified.</p>
+            <p>These receipts connect the product claim to native WebMCP behavior, adversarial tests, browser journeys, independent live-tool probes, and the exact limits of what was verified.</p>
           </div>
           <div className={`release-seal ${livePassed && releasePassed ? 'passed' : ''}`}>
             <BadgeCheck size={34} />
@@ -402,7 +406,7 @@ function EvidencePage() {
         <section className="evidence-metrics" aria-label="Release evidence summary">
           <article><strong>{evalReceipt.passed}/{evalReceipt.total}</strong><span>adversarial scenarios</span><small>Audience, purpose, expiry, replay, tampering, authority</small></article>
           <article><strong>4/4</strong><span>browser journeys</span><small>Cross-tab flow, recovery, evidence, 390px viewport</small></article>
-          <article><strong>5 → 0</strong><span>claims to private fields</span><small>Only derived eligibility crosses the boundary</small></article>
+          <article><strong>{nekudaAudit.score}/100</strong><span>independent tool audit</span><small>Zero findings across definitions, schemas, toolset, and safety</small></article>
           <article><strong>0 → 1 → 0</strong><span>export capability</span><small>Absent, human-unlocked, then withdrawn</small></article>
         </section>
 
@@ -440,8 +444,9 @@ function EvidencePage() {
         </section>
 
         <section className="evidence-section release-checks">
-          <div className="evidence-section-heading"><div><p className="section-kicker">Release gate</p><h2>Every claim has a corresponding check.</h2></div><p>Executed together by <code>npm run verify</code>. The machine-readable release receipt remains outside the app bundle so its artifact hashes are not self-referential. Public evidence is a test receipt, not a security certification.</p></div>
+          <div className="evidence-section-heading"><div><p className="section-kicker">Release gate</p><h2>Every claim has a corresponding check.</h2></div><p>The first-party gate runs together with <code>npm run verify</code>. Independent Workbench and GoogleChromeLabs probes are supplemental rather than certifications.</p></div>
           <div className="release-check-grid">{releaseChecks.map((check) => <article key={check.name}><BadgeCheck size={18} /><div><strong>{check.name}</strong><code>{check.command}</code></div><span>passed</span></article>)}</div>
+          <div className="live-receipt-line"><BadgeCheck size={18} /><strong>Independent probes:</strong><span>{webmcpSmoke.passedSteps}/{webmcpSmoke.totalSteps} live tool steps</span><span>{nekudaAudit.score}/100 audit</span><a href={webmcpSmokeUrl} target="_blank">Smoke receipt <ExternalLink size={12} /></a><a href={workbenchAuditUrl} target="_blank">Audit receipt <ExternalLink size={12} /></a></div>
         </section>
 
         <section className="evidence-limitations">
