@@ -3,7 +3,10 @@ import {
   approveCase,
   compareCase,
   createSeedCase,
+  getFinancialSummary,
+  getEvidence,
   getReviewState,
+  revertResolution,
   stageResolution,
 } from './reconciliation'
 
@@ -22,7 +25,7 @@ describe('reconciliation case', () => {
   it('stages a reversible resolution without approving the case', () => {
     const draft = stageResolution(createSeedCase(), {
       discrepancyId: 'qty-001',
-      selectedValue: 22,
+      selectedSource: 'goodsReceipt',
       reason: 'Use the quantity physically received.',
       actor: 'agent',
       expectedVersion: 1,
@@ -37,14 +40,14 @@ describe('reconciliation case', () => {
   it('replaces an agent draft with the human correction and preserves attribution', () => {
     const first = stageResolution(createSeedCase(), {
       discrepancyId: 'price-001',
-      selectedValue: 148,
+      selectedSource: 'invoice',
       reason: 'Use invoice price.',
       actor: 'agent',
       expectedVersion: 1,
     }).case
     const corrected = stageResolution(first, {
       discrepancyId: 'price-001',
-      selectedValue: 145,
+      selectedSource: 'purchaseOrder',
       reason: 'PO price is contractually agreed.',
       actor: 'human',
       expectedVersion: 2,
@@ -57,15 +60,15 @@ describe('reconciliation case', () => {
   it('reports readiness only after every discrepancy has a draft', () => {
     let caseState = createSeedCase()
     const resolutions = [
-      ['qty-001', 22, 'Use received quantity.'],
-      ['price-001', 145, 'Use contracted PO price.'],
-      ['tax-001', 18, 'Use supplier tax rate after review.'],
+      ['qty-001', 'goodsReceipt', 'Use received quantity.'],
+      ['price-001', 'purchaseOrder', 'Use contracted PO price.'],
+      ['tax-001', 'purchaseOrder', 'Use purchase-order tax rate after review.'],
     ] as const
 
-    for (const [discrepancyId, selectedValue, reason] of resolutions) {
+    for (const [discrepancyId, selectedSource, reason] of resolutions) {
       caseState = stageResolution(caseState, {
         discrepancyId,
-        selectedValue,
+        selectedSource,
         reason,
         actor: 'agent',
         expectedVersion: caseState.version,
@@ -77,14 +80,14 @@ describe('reconciliation case', () => {
 
   it('allows only a human to approve a ready case', () => {
     let caseState = createSeedCase()
-    for (const [discrepancyId, selectedValue] of [
-      ['qty-001', 22],
-      ['price-001', 145],
-      ['tax-001', 18],
+    for (const [discrepancyId, selectedSource] of [
+      ['qty-001', 'goodsReceipt'],
+      ['price-001', 'purchaseOrder'],
+      ['tax-001', 'purchaseOrder'],
     ] as const) {
       caseState = stageResolution(caseState, {
         discrepancyId,
-        selectedValue,
+        selectedSource,
         reason: 'Reviewed against source records.',
         actor: 'agent',
         expectedVersion: caseState.version,
@@ -99,11 +102,94 @@ describe('reconciliation case', () => {
     expect(() =>
       stageResolution(createSeedCase(), {
         discrepancyId: 'qty-001',
-        selectedValue: 22,
+        selectedSource: 'goodsReceipt',
         reason: 'Use received quantity.',
         actor: 'agent',
         expectedVersion: 0,
       }),
     ).toThrow('Case changed. Inspect it again before staging a resolution.')
+  })
+
+  it('quantifies the pre-tax amount protected by the current drafts', () => {
+    let caseState = createSeedCase()
+    caseState = stageResolution(caseState, {
+      discrepancyId: 'qty-001',
+      selectedSource: 'goodsReceipt',
+      reason: 'Use the quantity physically received.',
+      actor: 'agent',
+      expectedVersion: caseState.version,
+    }).case
+    caseState = stageResolution(caseState, {
+      discrepancyId: 'price-001',
+      selectedSource: 'purchaseOrder',
+      reason: 'Use the contracted purchase-order price.',
+      actor: 'agent',
+      expectedVersion: caseState.version,
+    }).case
+
+    expect(getFinancialSummary(caseState)).toEqual({
+      invoiceSubtotal: 3552,
+      resolvedSubtotal: 3190,
+      amountUnderReview: 362,
+      currency: 'USD',
+      complete: true,
+    })
+  })
+
+  it('lets an agent revert its own draft but not a human correction', () => {
+    const agentDraft = stageResolution(createSeedCase(), {
+      discrepancyId: 'qty-001',
+      selectedSource: 'goodsReceipt',
+      reason: 'Use the quantity physically received.',
+      actor: 'agent',
+      expectedVersion: 1,
+    }).case
+    const reverted = revertResolution(agentDraft, {
+      discrepancyId: 'qty-001',
+      actor: 'agent',
+      expectedVersion: 2,
+    }).case
+
+    expect(reverted.drafts['qty-001']).toBeUndefined()
+    expect(reverted.activity.at(-1)?.action).toBe('resolution_reverted')
+
+    const humanDraft = stageResolution(createSeedCase(), {
+      discrepancyId: 'tax-001',
+      selectedSource: 'purchaseOrder',
+      reason: 'Human reviewed the tax treatment.',
+      actor: 'human',
+      expectedVersion: 1,
+    }).case
+    expect(() => revertResolution(humanDraft, {
+      discrepancyId: 'tax-001',
+      actor: 'agent',
+      expectedVersion: 2,
+    })).toThrow('The current draft was corrected by a human and cannot be reverted by the agent.')
+  })
+
+  it('returns an exact source anchor for a discrepancy value', () => {
+    expect(getEvidence(createSeedCase(), 'qty-001', 'goodsReceipt')).toEqual({
+      caseId: 'RR-1042',
+      discrepancyId: 'qty-001',
+      field: 'quantity',
+      source: 'goodsReceipt',
+      sourceLabel: 'Goods receipt',
+      reference: 'GR-2196',
+      locator: 'Page 1 · Line 05',
+      excerpt: 'Quantity received 22 EA',
+      observedValue: 22,
+      untrustedNote: null,
+      synthetic: true,
+    })
+  })
+
+  it('rejects a source that has no observed value instead of accepting an invented number', () => {
+    expect(() => stageResolution(createSeedCase(), {
+      discrepancyId: 'price-001',
+      selectedSource: 'goodsReceipt',
+      reason: 'Try to use a missing receipt price.',
+      actor: 'agent',
+      expectedVersion: 1,
+    })).toThrow('Selected source has no observed value for this discrepancy.')
   })
 })

@@ -29,8 +29,14 @@ The initial WebMCP surface will be small and state-aware:
 - `list_cases`: find available cases and their status;
 - `inspect_case`: read bounded Source Record and discrepancy data;
 - `compare_records`: run the deterministic three-way comparison;
+- `open_evidence`: open an exact synthetic source anchor and mark external text untrusted;
 - `stage_resolution`: create or replace one reversible Resolution Draft;
+- `revert_resolution`: reverse a current agent-authored draft without overwriting a human correction;
 - `get_review_state`: read current drafts, unresolved items, and readiness.
+
+After human approval, the mutation tools are unregistered and `get_approval_receipt` is registered dynamically. The available Agent Boundary therefore follows the current Reconciliation Case state.
+
+Resolution Drafts are source-bound: the agent selects a Source Record, and deterministic code derives its observed value and stores the source-record ID. Arbitrary model-authored numeric values are not accepted.
 
 There will be no WebMCP tool for payment, posting to an accounting system, or final human approval.
 

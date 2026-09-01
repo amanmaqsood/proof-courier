@@ -1,8 +1,12 @@
 import {
   compareCase,
+  getEvidence,
+  getFinancialSummary,
   getReviewState,
+  revertResolution,
   stageResolution,
   type ReconciliationCase,
+  type EvidenceSource,
   type StageResolutionInput,
 } from './domain/reconciliation'
 
@@ -17,7 +21,7 @@ type ToolDefinition = {
 declare global {
   interface Document {
     modelContext?: {
-      registerTool(tool: ToolDefinition): void | Promise<void>
+      registerTool(tool: ToolDefinition, options?: { signal?: AbortSignal }): void | Promise<void>
       unregisterTool?(name: string): void | Promise<void>
     }
   }
@@ -27,6 +31,7 @@ interface Bridge {
   getCase: () => ReconciliationCase
   setCase: (next: ReconciliationCase) => void
   focusDiscrepancy: (id?: string) => void
+  openEvidence: (discrepancyId: string, source: EvidenceSource) => void
 }
 
 const emptyObjectSchema = { type: 'object', properties: {}, additionalProperties: false }
@@ -37,7 +42,16 @@ function toolResult(summary: string, data: unknown) {
 
 export function registerReconRoomTools(bridge: Bridge) {
   const context = document.modelContext
-  if (!context) return { supported: false, toolNames: [] as string[] }
+  if (!context) {
+    return {
+      supported: false,
+      toolNames: [] as string[],
+      sync: (_caseState: ReconciliationCase) => ({ supported: false, toolNames: [] as string[] }),
+      dispose: () => undefined,
+    }
+  }
+  const modelContext = context
+  const lifecycle = new AbortController()
 
   const tools: ToolDefinition[] = [
     {
@@ -95,6 +109,51 @@ export function registerReconRoomTools(bridge: Bridge) {
       },
     },
     {
+      name: 'open_evidence',
+      description: 'Opens and returns the exact source anchor for one discrepancy value in the visible UI.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          caseId: { type: 'string', description: 'Case ID containing the discrepancy.' },
+          discrepancyId: { type: 'string', enum: ['qty-001', 'price-001', 'tax-001'] },
+          source: { type: 'string', enum: ['purchaseOrder', 'goodsReceipt', 'invoice'], description: 'Source record to open.' },
+        },
+        required: ['caseId', 'discrepancyId', 'source'],
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true, untrustedContentHint: true },
+      execute: ({ caseId, discrepancyId, source }) => {
+        const current = bridge.getCase()
+        if (caseId !== current.id) throw new Error(`Case ${String(caseId)} was not found. Call list_cases first.`)
+        const evidenceSource = String(source) as EvidenceSource
+        const evidence = getEvidence(current, String(discrepancyId), evidenceSource)
+        bridge.focusDiscrepancy(String(discrepancyId))
+        bridge.openEvidence(String(discrepancyId), evidenceSource)
+        return toolResult(`Opened ${evidence.reference} at ${evidence.locator}.`, evidence)
+      },
+    },
+    {
+      name: 'get_review_state',
+      description: 'Reads unresolved items and whether the case is ready for human-only approval.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          caseId: { type: 'string', description: 'Case ID to review.' },
+        },
+        required: ['caseId'],
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true },
+      execute: ({ caseId }) => {
+        const current = bridge.getCase()
+        if (caseId !== current.id) throw new Error(`Case ${String(caseId)} was not found. Call list_cases first.`)
+        return toolResult('Current review state.', {
+          ...getReviewState(current),
+          financialSummary: getFinancialSummary(current),
+        })
+      },
+    },
+    {
       name: 'stage_resolution',
       description: 'Stages one reversible field resolution with visible agent attribution. It never approves or pays.',
       inputSchema: {
@@ -102,19 +161,19 @@ export function registerReconRoomTools(bridge: Bridge) {
         properties: {
           caseId: { type: 'string', description: 'Case ID to update.' },
           discrepancyId: { type: 'string', enum: ['qty-001', 'price-001', 'tax-001'] },
-          selectedValue: { type: 'number', description: 'Proposed numeric value for the field.' },
+          selectedSource: { type: 'string', enum: ['purchaseOrder', 'goodsReceipt', 'invoice'], description: 'Immutable source record whose observed value should be used.' },
           reason: { type: 'string', minLength: 8, description: 'Evidence-based reason for this draft.' },
           expectedVersion: { type: 'number', description: 'Version returned by inspect_case or get_review_state.' },
         },
-        required: ['caseId', 'discrepancyId', 'selectedValue', 'reason', 'expectedVersion'],
+        required: ['caseId', 'discrepancyId', 'selectedSource', 'reason', 'expectedVersion'],
         additionalProperties: false,
       },
-      execute: ({ caseId, discrepancyId, selectedValue, reason, expectedVersion }) => {
+      execute: ({ caseId, discrepancyId, selectedSource, reason, expectedVersion }) => {
         const current = bridge.getCase()
         if (caseId !== current.id) throw new Error(`Case ${String(caseId)} was not found. Call list_cases first.`)
         const result = stageResolution(current, {
           discrepancyId: String(discrepancyId),
-          selectedValue: Number(selectedValue),
+          selectedSource: String(selectedSource) as EvidenceSource,
           reason: String(reason),
           expectedVersion: Number(expectedVersion),
           actor: 'agent',
@@ -125,15 +184,45 @@ export function registerReconRoomTools(bridge: Bridge) {
           newVersion: result.case.version,
           status: result.case.status,
           reviewState: getReviewState(result.case),
+          financialSummary: getFinancialSummary(result.case),
         })
       },
     },
     {
-      name: 'get_review_state',
-      description: 'Reads unresolved items and whether the case is ready for human-only approval.',
+      name: 'revert_resolution',
+      description: 'Reverts one current agent-authored draft. Human corrections are protected from agent reversion.',
       inputSchema: {
         type: 'object',
-        properties: { caseId: { type: 'string', description: 'Case ID to review.' } },
+        properties: {
+          caseId: { type: 'string', description: 'Case ID to update.' },
+          discrepancyId: { type: 'string', enum: ['qty-001', 'price-001', 'tax-001'] },
+          expectedVersion: { type: 'number', description: 'Current case version.' },
+        },
+        required: ['caseId', 'discrepancyId', 'expectedVersion'],
+        additionalProperties: false,
+      },
+      execute: ({ caseId, discrepancyId, expectedVersion }) => {
+        const current = bridge.getCase()
+        if (caseId !== current.id) throw new Error(`Case ${String(caseId)} was not found. Call list_cases first.`)
+        const result = revertResolution(current, {
+          discrepancyId: String(discrepancyId),
+          expectedVersion: Number(expectedVersion),
+          actor: 'agent',
+        })
+        bridge.setCase(result.case)
+        bridge.focusDiscrepancy(String(discrepancyId))
+        return toolResult(result.receipt.message, {
+          newVersion: result.case.version,
+          reviewState: getReviewState(result.case),
+        })
+      },
+    },
+    {
+      name: 'get_approval_receipt',
+      description: 'Reads the immutable human approval receipt after a case is approved. It never initiates payment.',
+      inputSchema: {
+        type: 'object',
+        properties: { caseId: { type: 'string', description: 'Approved case ID.' } },
         required: ['caseId'],
         additionalProperties: false,
       },
@@ -141,11 +230,56 @@ export function registerReconRoomTools(bridge: Bridge) {
       execute: ({ caseId }) => {
         const current = bridge.getCase()
         if (caseId !== current.id) throw new Error(`Case ${String(caseId)} was not found. Call list_cases first.`)
-        return toolResult('Current review state.', getReviewState(current))
+        if (current.status !== 'approved' || !current.approvedAt) {
+          throw new Error('This case has no approval receipt. Resolve every discrepancy and ask the human to approve it.')
+        }
+        return toolResult(`Human approval receipt for ${current.id}. No payment was initiated.`, {
+          caseId: current.id,
+          approvedBy: 'Aman',
+          approvedAt: current.approvedAt,
+          version: current.version,
+          paymentInitiated: false,
+          resolutions: current.drafts,
+          financialSummary: getFinancialSummary(current),
+        })
       },
     },
   ]
 
-  for (const tool of tools) context.registerTool(tool)
-  return { supported: true, toolNames: tools.map((tool) => tool.name) }
+  const toolsByName = new Map(tools.map((tool) => [tool.name, tool]))
+  const activeNames = new Set<string>()
+
+  function desiredNames(caseState: ReconciliationCase) {
+    const base = ['list_cases', 'inspect_case', 'compare_records', 'open_evidence', 'get_review_state']
+    return caseState.status === 'approved'
+      ? [...base, 'get_approval_receipt']
+      : [...base, 'stage_resolution', 'revert_resolution']
+  }
+
+  function sync(caseState: ReconciliationCase) {
+    const desired = desiredNames(caseState)
+    const desiredSet = new Set(desired)
+    if (modelContext.unregisterTool) {
+      for (const name of activeNames) {
+        if (!desiredSet.has(name)) {
+          modelContext.unregisterTool(name)
+          activeNames.delete(name)
+        }
+      }
+    }
+    for (const name of desired) {
+      if (!activeNames.has(name)) {
+        modelContext.registerTool(toolsByName.get(name)!, { signal: lifecycle.signal })
+        activeNames.add(name)
+      }
+    }
+    return { supported: true, toolNames: desired }
+  }
+
+  const initial = sync(bridge.getCase())
+  function dispose() {
+    lifecycle.abort()
+    activeNames.clear()
+  }
+  return { ...initial, sync, dispose }
 }

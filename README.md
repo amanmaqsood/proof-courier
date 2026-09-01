@@ -10,7 +10,7 @@ The current entry is a challenge prototype. All records are synthetic. It is not
 
 1. Open the live app in ChatGPT's in-app browser, or Chrome 149+ with WebMCP testing enabled.
 2. Ask: **“Review the urgent case and prepare it for my approval.”**
-3. Watch the agent inspect `RR-1042`, compare the three records, and stage three visible Resolution Drafts.
+3. Watch the agent inspect `RR-1042`, compare the three records, and stage three visible Resolution Drafts. The page quantifies the pre-tax amount under review.
 4. In the Tax rate discrepancy, click **18%** to correct the agent's draft. The activity trail records a human correction rather than overwriting identity.
 5. Ask the agent to check whether the case is ready.
 6. Press **Approve reconciled record** yourself. No agent tool can approve, post, or pay.
@@ -30,12 +30,15 @@ This is deliberately not full automation. The agent handles comparison and prepa
 | `list_cases` | Find visible cases and urgency | No | Bounded synthetic summary |
 | `inspect_case` | Read source records, drafts, status, and version | No | Read-only + untrusted-content annotation |
 | `compare_records` | Run deterministic three-way matching and focus the UI | No | No model-authored arithmetic |
-| `stage_resolution` | Stage or replace one visible Resolution Draft | Yes, reversible | Expected-version check, strict schema, agent attribution |
-| `get_review_state` | Read unresolved items and readiness | No | Explicit human-only approval boundary |
+| `open_evidence` | Open the exact source record, field locator, and excerpt | No | Read-only + untrusted-content annotation |
+| `get_review_state` | Read unresolved items, readiness, and financial summary | No | Explicit human-only approval boundary |
+| `stage_resolution` | Stage or replace one source-bound Resolution Draft | Yes, reversible | Agent chooses an immutable source, never an invented value |
+| `revert_resolution` | Revert a current agent-authored draft | Yes, reversible | Cannot revert a human correction |
+| `get_approval_receipt` | Read the human approval receipt after approval | No | Registered only after approval; confirms no payment |
 
 Tool registration is implemented in [`src/webmcp.ts`](src/webmcp.ts). The shared deterministic domain logic is in [`src/domain/reconciliation.ts`](src/domain/reconciliation.ts).
 
-There is intentionally no tool for final approval, accounting-system posting, or payment.
+The tool inventory is state-aware: seven review tools are available before approval; after the human approves, both mutation tools are unregistered and `get_approval_receipt` appears, leaving six read-only/post-approval capabilities. Every registration is bound to an `AbortSignal` for lifecycle cleanup. There is intentionally no tool for final approval, accounting-system posting, or payment.
 
 ## Architecture
 
@@ -69,7 +72,7 @@ npm run lint
 npm run build
 ```
 
-The domain tests cover deterministic discrepancy detection, reversible staging, human correction attribution, readiness, human-only approval, and stale-write rejection. See [`docs/EVALS.md`](docs/EVALS.md) for the agent evaluation plan.
+Twelve automated tests cover deterministic discrepancy detection, exact evidence anchors, source-bound resolution, quantified exposure, reversible staging, protected human correction, readiness, human-only approval, stale-write rejection, WebMCP tool contracts, lifecycle cleanup, forbidden-capability absence, and dynamic capability transitions. See [`docs/EVALS.md`](docs/EVALS.md) for the agent evaluation plan.
 
 ## Challenge scope
 
