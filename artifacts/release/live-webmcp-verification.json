@@ -1,13 +1,14 @@
 {
-  "receiptVersion": 1,
-  "capturedAt": "2026-09-01T11:54:56Z",
-  "sourceCommit": "564f7d4d75581402c291abaee814199b659082b0",
-  "deploymentId": "dpl_3BZHusZqQLsYWa6iExY3XZKF62q1",
+  "receiptVersion": 2,
+  "capturedAt": "2026-09-01T13:02:43Z",
+  "sourceCommit": "a2639167b2d98e4b963a354ce80950cb07a8a26b",
+  "deploymentId": "dpl_7FSC6jEWzudkpNsWfkgCAqSSAZm6",
   "baseUrl": "https://proof-courier-orcin.vercel.app",
   "host": "OpenAI Codex in-app browser",
   "execution": "native WebMCP capability calls across separate live wallet and verifier tabs",
   "consent": {
     "approvedByUser": true,
+    "uiAction": "Visible wallet approval clicked by the browser agent under the user's prior authorization for these five synthetic claims.",
     "claimIds": [
       "age_over_18",
       "active_enrollment",
