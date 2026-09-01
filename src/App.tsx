@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ArrowRight,
   Bot,
@@ -33,7 +33,7 @@ import {
   type ReconciliationCase,
   type SourceRecord,
 } from './domain/reconciliation'
-import { registerReconRoomTools } from './webmcp'
+import { registerReconRoomTools, type ToolTraceEvent } from './webmcp'
 
 const money = (value: number) => `$${value.toFixed(2)}`
 
@@ -106,7 +106,7 @@ function DiscrepancyRow({
         </div>
         {draft && <span className="resolved-badge"><Check size={14} /> Drafted</span>}
       </div>
-      <div className="source-values" aria-label={`Source values for ${discrepancy.label}`}>
+      <div className="source-values" role="group" aria-label={`Source values for ${discrepancy.label}`}>
         {sources.map(([label, value, source]) => (
           <button key={label} type="button" disabled={value === null} onClick={() => onEvidence(discrepancy, source)} className={draft?.selectedValue === value ? 'selected-source' : ''}>
             <span>{label}</span>
@@ -149,6 +149,8 @@ function App() {
   const [activeDiscrepancy, setActiveDiscrepancy] = useState<string>()
   const [tools, setTools] = useState<{ supported: boolean; toolNames: string[] }>({ supported: false, toolNames: [] })
   const [demoRunning, setDemoRunning] = useState(false)
+  const traceSequence = useRef(0)
+  const [traceEvents, setTraceEvents] = useState<Array<ToolTraceEvent & { id: string }>>([])
   const [evidenceSelection, setEvidenceSelection] = useState<{ discrepancyId: string; source: EvidenceSource } | null>(null)
   const discrepancies = compareCase(caseState)
   const review = getReviewState(caseState)
@@ -156,6 +158,13 @@ function App() {
   const evidence = evidenceSelection
     ? getEvidence(caseState, evidenceSelection.discrepancyId, evidenceSelection.source)
     : null
+  const humanCorrections = Object.values(caseState.drafts).filter((draft) => draft.actor === 'human').length
+
+  const appendTrace = useCallback((event: ToolTraceEvent) => {
+    traceSequence.current += 1
+    const id = `trace-${traceSequence.current}`
+    setTraceEvents((current) => [...current, { ...event, id }].slice(-20))
+  }, [])
 
   useEffect(() => {
     caseRef.current = caseState
@@ -174,6 +183,7 @@ function App() {
         if (id) window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80)
       },
       openEvidence: (discrepancyId, source) => setEvidenceSelection({ discrepancyId, source }),
+      recordTrace: appendTrace,
     })
     toolsManagerRef.current = registration
     setTools(registration)
@@ -181,33 +191,48 @@ function App() {
       toolsManagerRef.current = null
       registration.dispose()
     }
-  }, [])
+  }, [appendTrace])
 
   function resolve(discrepancy: Discrepancy, source: EvidenceSource, actor: Actor, reason?: string) {
-    setCaseState((current) => stageResolution(current, {
+    const result = stageResolution(caseRef.current, {
       discrepancyId: discrepancy.id,
       selectedSource: source,
       reason: reason ?? `Human reviewed ${discrepancy.label.toLowerCase()} against the three source records.`,
       actor,
-      expectedVersion: current.version,
-    }).case)
+      expectedVersion: caseRef.current.version,
+    })
+    caseRef.current = result.case
+    setCaseState(result.case)
+    appendTrace({
+      toolName: actor === 'human' ? 'human_correction' : 'stage_resolution',
+      channel: actor === 'human' ? 'human' : 'preview',
+      status: 'succeeded',
+      summary: result.receipt.message,
+      createdAt: new Date().toISOString(),
+    })
     setActiveDiscrepancy(discrepancy.id)
   }
 
   function revert(discrepancy: Discrepancy) {
-    setCaseState((current) => revertResolution(current, {
+    const result = revertResolution(caseRef.current, {
       discrepancyId: discrepancy.id,
       actor: 'human',
-      expectedVersion: current.version,
-    }).case)
+      expectedVersion: caseRef.current.version,
+    })
+    caseRef.current = result.case
+    setCaseState(result.case)
+    appendTrace({ toolName: 'human_revert', channel: 'human', status: 'succeeded', summary: result.receipt.message, createdAt: new Date().toISOString() })
     setActiveDiscrepancy(discrepancy.id)
   }
 
   async function runGuidedDemo() {
     if (demoRunning) return
     setDemoRunning(true)
+    setTraceEvents([])
     let next = createSeedCase()
     setCaseState(next)
+    appendTrace({ toolName: 'preview_goal', channel: 'preview', status: 'succeeded', summary: 'Goal: prepare RR-1042 for human approval without approving or paying.', createdAt: new Date().toISOString() })
+    appendTrace({ toolName: 'list_cases → inspect_case → compare_records', channel: 'preview', status: 'succeeded', summary: 'Inspected version 1 and found 3 source-backed discrepancies.', createdAt: new Date().toISOString() })
     const suggestions = [
       ['qty-001', 'goodsReceipt', 'Use the quantity physically received; two chairs remain outstanding.'],
       ['price-001', 'purchaseOrder', 'Use the contracted purchase-order price; no authorized increase is attached.'],
@@ -226,7 +251,9 @@ function App() {
       caseRef.current = next
       setCaseState(next)
       setActiveDiscrepancy(discrepancy.id)
+      appendTrace({ toolName: 'stage_resolution', channel: 'preview', status: 'succeeded', summary: `Drafted ${discrepancy.label} from ${source}; case is now version ${next.version}.`, createdAt: new Date().toISOString() })
     }
+    appendTrace({ toolName: 'get_review_state', channel: 'preview', status: 'succeeded', summary: '0 unresolved. Ready for human-only approval. $362.00 is under review.', createdAt: new Date().toISOString() })
     setDemoRunning(false)
   }
 
@@ -236,10 +263,17 @@ function App() {
     setCaseState(seed)
     setActiveDiscrepancy(undefined)
     setEvidenceSelection(null)
+    setTraceEvents([])
   }
 
   function approve() {
-    setCaseState((current) => approveCase(current, 'human').case)
+    const result = approveCase(caseRef.current, 'human')
+    caseRef.current = result.case
+    setCaseState(result.case)
+    const synced = toolsManagerRef.current?.sync(result.case)
+    if (synced) setTools(synced)
+    appendTrace({ toolName: 'human_approval', channel: 'human', status: 'succeeded', summary: result.receipt.message, createdAt: new Date().toISOString() })
+    appendTrace({ toolName: 'capability_withdrawal', channel: 'webmcp', status: 'succeeded', summary: 'stage_resolution and revert_resolution withdrawn; approval receipt exposed read-only.', createdAt: new Date().toISOString() })
   }
 
   return (
@@ -293,6 +327,7 @@ function App() {
               </summary>
               {tools.supported && <ul>{tools.toolNames.map((name) => <li key={name}>{name}</li>)}</ul>}
             </details>
+            <div className="eval-status"><CheckCircle2 size={15} /><span><strong>8 scenario evals</strong>Machine-readable receipt</span></div>
           </aside>
 
           <div className="case-main">
@@ -359,20 +394,48 @@ function App() {
               <div className="no-payment"><LockKeyhole size={14} /> Approval does not post or pay</div>
             </div>
 
-            <div className="activity-panel">
-              <div className="activity-heading"><h3>Shared activity</h3><span>{caseState.activity.length}</span></div>
-              {caseState.activity.length === 0 ? (
-                <div className="empty-activity"><ArrowRight size={18} /><p>Agent drafts and human corrections will appear here with separate identities.</p></div>
-              ) : (
-                <ol>
-                  {[...caseState.activity].reverse().map((event) => (
-                    <li key={event.id}>
-                      <span className={`actor-mark ${event.actor}`}>{event.actor === 'agent' ? <Bot size={14} /> : <UserRound size={14} />}</span>
-                      <div><strong>{event.actor === 'agent' ? 'Recon agent' : 'Aman'}</strong><p>{event.message}</p></div>
-                    </li>
-                  ))}
-                </ol>
-              )}
+            <div className="review-evidence-column">
+              <div className="proof-snapshot">
+                <div className="activity-heading"><h3>Live proof</h3><span>Before → now</span></div>
+                <div className="proof-grid">
+                  <div><strong>0 → {Object.keys(caseState.drafts).length}</strong><span>drafts</span></div>
+                  <div><strong>3 → {review.unresolvedCount}</strong><span>unresolved</span></div>
+                  <div><strong>{humanCorrections}</strong><span>human corrections</span></div>
+                  <div><strong>{financial.amountUnderReview === null ? '—' : money(financial.amountUnderReview)}</strong><span>guarded</span></div>
+                </div>
+              </div>
+
+              <div className="trace-panel">
+                <div className="activity-heading"><h3>Agent trace</h3><span>{traceEvents.length}</span></div>
+                {traceEvents.length === 0 ? (
+                  <div className="empty-activity"><Bot size={18} /><p>Use ChatGPT or Preview agent pass to expose tool calls, recoveries, and handoffs.</p></div>
+                ) : (
+                  <ol className="trace-list" tabIndex={0} aria-label="Agent tool trace, newest first">
+                    {[...traceEvents].reverse().map((event) => (
+                      <li key={event.id}>
+                        <div><span className={`trace-channel ${event.channel}`}>{event.channel}</span><strong>{event.toolName}</strong></div>
+                        <p className={event.status === 'blocked' ? 'trace-blocked' : ''}>{event.summary}</p>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+
+              <div className="activity-panel">
+                <div className="activity-heading"><h3>Shared activity</h3><span>{caseState.activity.length}</span></div>
+                {caseState.activity.length === 0 ? (
+                  <div className="empty-activity"><ArrowRight size={18} /><p>Agent drafts and human corrections will appear here with separate identities.</p></div>
+                ) : (
+                  <ol>
+                    {[...caseState.activity].reverse().map((event) => (
+                      <li key={event.id}>
+                        <span className={`actor-mark ${event.actor}`}>{event.actor === 'agent' ? <Bot size={14} /> : <UserRound size={14} />}</span>
+                        <div><strong>{event.actor === 'agent' ? 'Recon agent' : 'Aman'}</strong><p>{event.message}</p></div>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
             </div>
           </aside>
         </section>

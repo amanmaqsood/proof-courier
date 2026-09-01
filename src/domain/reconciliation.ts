@@ -165,6 +165,58 @@ export function createSeedCase(): ReconciliationCase {
   }
 }
 
+export function createGeneralizationCase(): ReconciliationCase {
+  const seed = createSeedCase()
+  return {
+    ...seed,
+    id: 'RR-2048',
+    vendor: 'Harbor Facilities Co.',
+    item: 'Emergency lighting kits',
+    dueLabel: 'Due in 3 days',
+    records: [
+      {
+        ...seed.records[0],
+        id: 'po-9104',
+        reference: 'PO-9104',
+        issuedAt: 'Aug 27, 2026',
+        quantity: 10,
+        unitPrice: 82,
+        taxRate: 5,
+        evidence: {
+          quantity: { locator: 'Page 1 · Line 06', excerpt: 'Ordered 10 EA emergency lighting kits' },
+          unitPrice: { locator: 'Page 1 · Line 06', excerpt: 'Unit price USD 82.00' },
+          taxRate: { locator: 'Page 1 · Line 11', excerpt: 'Applicable tax 5%' },
+        },
+      },
+      {
+        ...seed.records[1],
+        id: 'gr-3308',
+        reference: 'GR-3308',
+        issuedAt: 'Aug 29, 2026',
+        quantity: 10,
+        evidence: {
+          quantity: { locator: 'Page 1 · Line 04', excerpt: 'Quantity received 10 EA' },
+        },
+      },
+      {
+        ...seed.records[2],
+        id: 'inv-7002',
+        reference: 'INV-7002',
+        issuedAt: 'Aug 31, 2026',
+        quantity: 10,
+        unitPrice: 85,
+        taxRate: 5,
+        evidence: {
+          quantity: { locator: 'Page 1 · Line 07', excerpt: 'Quantity billed 10 EA' },
+          unitPrice: { locator: 'Page 1 · Line 07', excerpt: 'Rate USD 85.00 per EA' },
+          taxRate: { locator: 'Page 1 · Line 12', excerpt: 'Tax charged 5%' },
+        },
+        supplierNote: undefined,
+      },
+    ],
+  }
+}
+
 export function compareCase(caseState: ReconciliationCase): Discrepancy[] {
   const [purchaseOrder, goodsReceipt, invoice] = caseState.records
   const values: Record<DiscrepancyField, SourceValues> = {
@@ -243,11 +295,20 @@ export function getReviewState(caseState: ReconciliationCase) {
 
 export function getFinancialSummary(caseState: ReconciliationCase) {
   const invoice = caseState.records.find((record) => record.type === 'supplier_invoice')!
-  const quantityDraft = caseState.drafts['qty-001']
-  const priceDraft = caseState.drafts['price-001']
+  const discrepancies = compareCase(caseState)
+  const resolvedFieldValue = (discrepancyId: string, field: 'quantity' | 'unitPrice') => {
+    const discrepancy = discrepancies.find((item) => item.id === discrepancyId)
+    if (discrepancy) return caseState.drafts[discrepancyId]?.selectedValue ?? null
+    const knownValues = caseState.records
+      .map((record) => record[field])
+      .filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+    return knownValues.length > 0 && new Set(knownValues).size === 1 ? knownValues[0] : null
+  }
+  const resolvedQuantity = resolvedFieldValue('qty-001', 'quantity')
+  const resolvedPrice = resolvedFieldValue('price-001', 'unitPrice')
   const invoiceSubtotal = invoice.quantity * (invoice.unitPrice ?? 0)
-  const complete = Boolean(quantityDraft && priceDraft)
-  const resolvedSubtotal = complete ? quantityDraft.selectedValue * priceDraft.selectedValue : null
+  const complete = resolvedQuantity !== null && resolvedPrice !== null
+  const resolvedSubtotal = complete ? resolvedQuantity * resolvedPrice : null
   return {
     invoiceSubtotal,
     resolvedSubtotal,

@@ -5,3 +5,6 @@ work/
 outputs/
 *.local
 *.tsbuildinfo
+.vercel
+.env*
+artifacts/evals/.vitest-results.json

@@ -32,6 +32,15 @@ interface Bridge {
   setCase: (next: ReconciliationCase) => void
   focusDiscrepancy: (id?: string) => void
   openEvidence: (discrepancyId: string, source: EvidenceSource) => void
+  recordTrace?: (event: ToolTraceEvent) => void
+}
+
+export type ToolTraceEvent = {
+  toolName: string
+  channel: 'webmcp' | 'preview' | 'human'
+  status: 'succeeded' | 'blocked'
+  summary: string
+  createdAt: string
 }
 
 const emptyObjectSchema = { type: 'object', properties: {}, additionalProperties: false }
@@ -246,6 +255,39 @@ export function registerReconRoomTools(bridge: Bridge) {
     },
   ]
 
+  for (const tool of tools) {
+    const execute = tool.execute
+    tool.execute = (input) => {
+      const record = (status: ToolTraceEvent['status'], summary: string) => bridge.recordTrace?.({
+        toolName: tool.name,
+        channel: 'webmcp',
+        status,
+        summary,
+        createdAt: new Date().toISOString(),
+      })
+      try {
+        const result = execute(input)
+        if (result && typeof result === 'object' && 'then' in result) {
+          return Promise.resolve(result).then(
+            (value) => {
+              record('succeeded', traceSummary(value))
+              return value
+            },
+            (error: unknown) => {
+              record('blocked', error instanceof Error ? error.message : 'Tool call was blocked.')
+              throw error
+            },
+          )
+        }
+        record('succeeded', traceSummary(result))
+        return result
+      } catch (error) {
+        record('blocked', error instanceof Error ? error.message : 'Tool call was blocked.')
+        throw error
+      }
+    }
+  }
+
   const toolsByName = new Map(tools.map((tool) => [tool.name, tool]))
   const activeNames = new Set<string>()
 
@@ -282,4 +324,11 @@ export function registerReconRoomTools(bridge: Bridge) {
     activeNames.clear()
   }
   return { ...initial, sync, dispose }
+}
+
+function traceSummary(result: unknown) {
+  if (result && typeof result === 'object' && 'summary' in result && typeof result.summary === 'string') {
+    return result.summary
+  }
+  return 'Tool call completed.'
 }

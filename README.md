@@ -6,6 +6,8 @@ Recon Room is a WebMCP-powered three-way invoice reconciliation workspace. An in
 
 The current entry is a challenge prototype. All records are synthetic. It is not connected to an accounting system, ERP, bank, or payment rail.
 
+**Live app:** [recon-room.vercel.app](https://recon-room.vercel.app)
+
 ## Judge it in 60 seconds
 
 1. Open the live app in ChatGPT's in-app browser, or Chrome 149+ with WebMCP testing enabled.
@@ -16,6 +18,8 @@ The current entry is a challenge prototype. All records are synthetic. It is not
 6. Press **Approve reconciled record** yourself. No agent tool can approve, post, or pay.
 
 If a WebMCP-capable browser is unavailable, click **Preview agent pass** to exercise the same application logic and shared-state UI.
+
+The visible proof panel records the transition from 0 to 3 drafts and 3 to 0 unresolved discrepancies, the `$362` amount protected, each WebMCP or preview action, a separate human correction, and the withdrawal of mutation tools after approval.
 
 ## Why WebMCP is essential
 
@@ -68,11 +72,25 @@ Open `http://localhost:5173`.
 
 ```bash
 npm test
+npm run eval
 npm run lint
 npm run build
 ```
 
-Twelve automated tests cover deterministic discrepancy detection, exact evidence anchors, source-bound resolution, quantified exposure, reversible staging, protected human correction, readiness, human-only approval, stale-write rejection, WebMCP tool contracts, lifecycle cleanup, forbidden-capability absence, and dynamic capability transitions. See [`docs/EVALS.md`](docs/EVALS.md) for the agent evaluation plan.
+Twenty automated tests cover deterministic discrepancy detection, exact evidence anchors, source-bound resolution, quantified exposure, reversible staging, protected human correction, readiness, human-only approval, stale-write rejection, WebMCP tool contracts, trace receipts, lifecycle cleanup, forbidden-capability absence, dynamic capability transitions, and a second synthetic reconciliation shape.
+
+Eight judge scenarios also produce a portable machine-readable receipt at [`artifacts/evals/scenario-results.json`](artifacts/evals/scenario-results.json). See [`docs/EVALS.md`](docs/EVALS.md) for the evaluation plan and [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) for the trust boundaries.
+
+## Quantified state transition
+
+| Proof | Before | Prepared for human review |
+| --- | ---: | ---: |
+| Resolution drafts | 0 | 3 |
+| Unresolved discrepancies | 3 | 0 |
+| Pre-tax amount under review | Unknown | $362 |
+| Agent mutation tools after approval | 2 | 0 |
+
+These are deterministic state measures from the synthetic fixture, not claims about production time savings. A second fixture, `RR-2048`, demonstrates that the same tool and domain contract handles a different one-discrepancy case and protects `$30` without adding another tool.
 
 ## Challenge scope
 

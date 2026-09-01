@@ -4,7 +4,7 @@ The test set separates probabilistic agent behavior from deterministic applicati
 
 ## Deterministic tests
 
-Run `npm test`. The public domain seam verifies:
+Run `npm test`. The public domain seam and judge scenarios verify:
 
 1. three known discrepancies are detected from the seeded records;
 2. staging creates a reversible draft without approval;
@@ -18,6 +18,10 @@ Run `npm test`. The public domain seam verifies:
 10. approval removes mutation tools and exposes a read-only approval receipt.
 11. each staged value is derived from a named immutable Source Record, and a source without an observed value is rejected;
 12. exact evidence anchors and the quarantined supplier-instruction fixture are returned without creating any approval capability.
+13. every native WebMCP call produces a bounded success or blocked trace event;
+14. a second synthetic case reuses the same contract for a different discrepancy shape.
+
+Run `npm run eval` to execute eight high-risk judge scenarios and regenerate [`artifacts/evals/scenario-results.json`](../artifacts/evals/scenario-results.json). The committed receipt contains scenario names and pass/fail status without local filesystem paths.
 
 ## Agent eval cases
 

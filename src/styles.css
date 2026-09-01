@@ -6,13 +6,13 @@
   background: #f3f0e8;
   font-synthesis: none;
   --ink: #17201c;
-  --muted: #67706a;
+  --muted: #56615a;
   --line: #d8d5cb;
   --paper: #fbfaf6;
   --cream: #f3f0e8;
   --green: #165f4b;
   --green-soft: #dceadf;
-  --orange: #c65a2d;
+  --orange: #974522;
   --orange-soft: #f7e3d7;
   --blue: #355b72;
   --blue-soft: #dfe9ee;
@@ -70,6 +70,9 @@ main { max-width: 1540px; margin: 0 auto; }
 .webmcp-status[open] .tool-chevron { transform: rotate(90deg); }
 .webmcp-status ul { list-style: none; margin: 11px 0 0 29px; padding: 0; display: grid; gap: 5px; }
 .webmcp-status li { font: 500 8px DM Mono, monospace; color: var(--ink); overflow-wrap: anywhere; }
+.eval-status { margin-top: 10px; padding: 10px; border: 1px solid #b9cfbf; border-radius: 8px; display: flex; align-items: center; gap: 8px; color: var(--green); background: #edf4ef; }
+.eval-status span { display: grid; gap: 2px; color: var(--muted); font: 500 7px DM Mono, monospace; text-transform: uppercase; }
+.eval-status strong { color: var(--green); font: 700 9px Manrope, sans-serif; text-transform: none; }
 
 .case-main { padding: 28px 30px 46px; min-width: 0; }
 .case-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 25px; }
@@ -89,9 +92,9 @@ main { max-width: 1540px; margin: 0 auto; }
 .document-card dl div { display: flex; justify-content: space-between; gap: 8px; font-size: 10px; }
 .document-card dt { color: var(--muted); }
 .document-card dd { margin: 0; font-weight: 700; }
-.document-date { border-top: 1px solid #ece9e1; color: #8b918d; font-size: 8px; padding-top: 9px; margin: 12px 0 0; }
+.document-date { border-top: 1px solid #ece9e1; color: var(--muted); font-size: 8px; padding-top: 9px; margin: 12px 0 0; }
 .quarantined-note { margin-top: 10px; padding: 7px; border-radius: 6px; display: flex; align-items: center; gap: 5px; background: #f8e8df; color: #9d4325; font-size: 7px; font-weight: 700; }
-.financial-impact { margin-top: 11px; border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; display: grid; grid-template-columns: 1fr auto 1fr 1.15fr; gap: 14px; align-items: center; background: #f5f3ec; color: #808680; }
+.financial-impact { margin-top: 11px; border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; display: grid; grid-template-columns: 1fr auto 1fr 1.15fr; gap: 14px; align-items: center; background: #f5f3ec; color: var(--muted); }
 .financial-impact > div { display: flex; flex-direction: column; gap: 3px; }
 .financial-impact span { font: 500 8px DM Mono, monospace; text-transform: uppercase; letter-spacing: .04em; }
 .financial-impact strong { color: var(--ink); font-size: 13px; }
@@ -147,11 +150,28 @@ main { max-width: 1540px; margin: 0 auto; }
 .approve-button:disabled { background: #c9c8c1; color: #787d79; cursor: not-allowed; }
 .no-payment { display: flex; gap: 6px; justify-content: center; align-items: center; color: var(--muted); font-size: 8px; margin-top: 9px; }
 .receipt-id { margin-top: 9px; color: var(--green); font: 500 8px DM Mono, monospace; text-transform: uppercase; }
+.review-evidence-column { min-width: 0; }
+.proof-snapshot, .trace-panel { border-top: 1px solid var(--line); margin-top: 24px; padding-top: 19px; }
+.proof-grid { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.proof-grid div { background: rgba(255,255,255,.5); border: 1px solid #d7d4ca; border-radius: 7px; padding: 8px; display: grid; gap: 3px; }
+.proof-grid strong { color: var(--green); font-size: 11px; }
+.proof-grid span { color: var(--muted); font: 500 7px DM Mono, monospace; text-transform: uppercase; }
+.trace-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; max-height: 230px; overflow: auto; }
+.trace-list:focus-visible { outline: 3px solid #e79a65; outline-offset: 3px; }
+.trace-list li { background: rgba(255,255,255,.52); border: 1px solid #d7d4ca; border-radius: 7px; padding: 8px; }
+.trace-list li > div { display: flex; align-items: center; gap: 6px; }
+.trace-list strong { font: 600 8px DM Mono, monospace; overflow-wrap: anywhere; }
+.trace-list p { color: var(--muted); font-size: 8px; line-height: 1.45; margin: 5px 0 0; }
+.trace-list .trace-blocked { color: #9b4429; }
+.trace-channel { border-radius: 999px; padding: 2px 5px; font: 700 6px DM Mono, monospace; text-transform: uppercase; }
+.trace-channel.webmcp { color: #214f3a; background: #d7eadc; }
+.trace-channel.preview { color: #5a4a20; background: #eee3bc; }
+.trace-channel.human { color: #70452d; background: #efdbc9; }
 .activity-panel { border-top: 1px solid var(--line); margin-top: 24px; padding-top: 19px; }
 .activity-heading { display: flex; justify-content: space-between; align-items: center; }
 .activity-heading h3 { margin: 0; font-size: 11px; }
 .activity-heading span { font-size: 8px; }
-.empty-activity { border: 1px dashed #cbc8bf; border-radius: 9px; padding: 14px; color: #8a8f8b; margin-top: 12px; }
+.empty-activity { border: 1px dashed #cbc8bf; border-radius: 9px; padding: 14px; color: var(--muted); margin-top: 12px; }
 .empty-activity p { font-size: 9px; line-height: 1.5; margin: 8px 0 0; }
 .activity-panel ol { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 15px; max-height: 350px; overflow: auto; }
 .activity-panel li { display: flex; gap: 9px; }
@@ -187,7 +207,8 @@ footer { max-width: 1492px; margin: 0 auto; padding: 8px 32px 28px; display: fle
 @media (max-width: 1120px) {
   .workspace { grid-template-columns: 180px minmax(500px, 1fr); }
   .review-panel { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 280px 1fr; gap: 30px; }
-  .activity-panel { border-top: 0; border-left: 1px solid var(--line); margin: 0; padding: 0 0 0 30px; }
+  .review-evidence-column { border-left: 1px solid var(--line); padding-left: 30px; }
+  .proof-snapshot { border-top: 0; margin-top: 0; padding-top: 0; }
 }
 
 @media (max-width: 760px) {
@@ -212,7 +233,8 @@ footer { max-width: 1492px; margin: 0 auto; padding: 8px 32px 28px; display: fle
   .source-values button:last-child { border-bottom: 0; }
   .evidence-drawer { width: 100%; padding: 22px 18px; }
   .review-panel { display: block; border-top: 1px solid var(--line); }
-  .activity-panel { border-left: 0; border-top: 1px solid var(--line); margin-top: 24px; padding: 19px 0 0; }
+  .review-evidence-column { border-left: 0; padding-left: 0; }
+  .proof-snapshot { border-top: 1px solid var(--line); margin-top: 24px; padding-top: 19px; }
   footer { flex-direction: column; gap: 8px; padding: 8px 20px 24px; }
 }
 

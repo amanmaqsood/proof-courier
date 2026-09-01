@@ -1,0 +1,50 @@
+{
+  "suite": "Recon Room judge scenarios",
+  "command": "npm run eval",
+  "success": true,
+  "passed": 8,
+  "failed": 0,
+  "total": 8,
+  "scenarios": [
+    {
+      "id": "E1",
+      "title": "completes the agent to human handoff and withdraws mutation capabilities",
+      "status": "passed"
+    },
+    {
+      "id": "E2",
+      "title": "rejects a selected source that has no observed field value",
+      "status": "passed"
+    },
+    {
+      "id": "E3",
+      "title": "publishes strict required inputs and rejects an invalid source at runtime",
+      "status": "passed"
+    },
+    {
+      "id": "E4",
+      "title": "blocks a stale write and succeeds only after reinspection",
+      "status": "passed"
+    },
+    {
+      "id": "E5",
+      "title": "quarantines instruction injection without exposing consequential capabilities",
+      "status": "passed"
+    },
+    {
+      "id": "E6",
+      "title": "aborts the complete tool lifecycle on disposal",
+      "status": "passed"
+    },
+    {
+      "id": "E7",
+      "title": "preserves a human correction against agent reversion",
+      "status": "passed"
+    },
+    {
+      "id": "E8",
+      "title": "applies the same contract to a second synthetic reconciliation shape",
+      "status": "passed"
+    }
+  ]
+}
