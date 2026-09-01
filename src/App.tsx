@@ -281,67 +281,58 @@ function App() {
       <header className="topbar">
         <a className="brand" href="#top" aria-label="Recon Room home">
           <span className="brand-mark"><Scale size={19} /></span>
-          <span>Recon Room</span>
+          <span><strong>Recon Room</strong><small>Exception review</small></span>
         </a>
-        <div className="topbar-center"><span className="live-dot" /> Synthetic demo workspace</div>
+        <div className="system-status">
+          <details className={`webmcp-status ${tools.supported ? 'connected' : ''}`}>
+            <summary>
+              <Fingerprint size={16} />
+              <span>{tools.supported ? 'WebMCP connected' : 'WebMCP ready'}</span>
+              <small>{tools.supported ? `${tools.toolNames.length} tools` : 'Open in ChatGPT or Chrome 149+'}</small>
+              <ChevronRight className="tool-chevron" size={13} />
+            </summary>
+            {tools.supported && <div className="tool-popover"><span>Active capabilities</span><ul>{tools.toolNames.map((name) => <li key={name}>{name}</li>)}</ul></div>}
+          </details>
+          <div className="eval-status"><CheckCircle2 size={14} /><span><strong>8/8 scenarios</strong><small>verified</small></span></div>
+        </div>
         <button className="reset-button" type="button" onClick={reset}><RotateCcw size={15} /> Reset case</button>
       </header>
 
       <main id="top">
         <section className="hero">
-          <div>
-            <p className="eyebrow"><Sparkles size={13} /> Built for human + agent judgment</p>
-            <h1>Three records disagree.<br /><em>Resolve one truth.</em></h1>
+          <div className="hero-main">
+            <p className="eyebrow"><Sparkles size={13} /> Evidence review for browser agents</p>
+            <h1>Reconcile the exception.<br /><em>Keep approval human.</em></h1>
+            <p>Three business records disagree. The agent prepares source-bound drafts; the person makes the consequential call.</p>
           </div>
-          <div className="hero-copy">
-            <p>Recon Room gives an in-browser agent safe tools to compare and stage fixes—while you keep the only approval key.</p>
+          <div className="hero-action">
+            <span className="hero-action-label">Judge prompt</span>
             <div className="prompt-card">
               <Bot size={18} />
-              <span>Try asking:</span>
               <strong>“Review the urgent case and prepare it for my approval.”</strong>
+            </div>
+            <div className="hero-proof">
+              <span><strong>3</strong> immutable sources</span>
+              <span><strong>7 → 6</strong> state-aware tools</span>
+              <span><strong>Human</strong> final authority</span>
             </div>
           </div>
         </section>
 
         <section className="workspace" aria-label="Reconciliation workspace">
-          <aside className="case-rail">
-            <div className="rail-heading">
-              <span>Review queue</span>
-              <strong>1</strong>
-            </div>
-            <button className="case-card active" type="button">
-              <span className="case-card-top"><span>{caseState.id}</span><span className="urgent">Urgent</span></span>
-              <strong>{caseState.vendor}</strong>
-              <small>{caseState.item}</small>
-              <span className="case-progress"><span style={{ width: `${((3 - review.unresolvedCount) / 3) * 100}%` }} /></span>
-              <span className="case-card-bottom">{review.unresolvedCount} unresolved <ChevronRight size={14} /></span>
-            </button>
-            <details className={`webmcp-status ${tools.supported ? 'connected' : ''}`}>
-              <summary>
-                <Fingerprint size={19} />
-                <div>
-                  <strong>{tools.supported ? 'WebMCP connected' : 'WebMCP-ready'}</strong>
-                  <span>{tools.supported ? `${tools.toolNames.length} tools exposed · View inventory` : 'Open in ChatGPT or Chrome 149+'}</span>
-                </div>
-                <ChevronRight className="tool-chevron" size={14} />
-              </summary>
-              {tools.supported && <ul>{tools.toolNames.map((name) => <li key={name}>{name}</li>)}</ul>}
-            </details>
-            <div className="eval-status"><CheckCircle2 size={15} /><span><strong>8 scenario evals</strong>Machine-readable receipt</span></div>
-          </aside>
-
           <div className="case-main">
             <div className="case-header">
               <div>
-                <div className="case-kicker"><span>{caseState.id}</span><span>·</span><span>{caseState.dueLabel}</span></div>
+                <div className="case-kicker"><span className="urgent">Urgent</span><span>{caseState.id}</span><span>·</span><span>{caseState.dueLabel}</span></div>
                 <h2>{caseState.vendor}</h2>
-                <p>{caseState.item} · Version {caseState.version}</p>
+                <p>{caseState.item} <span>·</span> Version {caseState.version} <span>·</span> {review.unresolvedCount} unresolved</p>
               </div>
               <button className="agent-demo" type="button" onClick={runGuidedDemo} disabled={demoRunning}>
                 <Bot size={17} /> {demoRunning ? 'Agent is drafting…' : 'Preview agent pass'}
               </button>
             </div>
 
+            <div className="source-heading"><span>Source records</span><small><LockKeyhole size={13} /> Immutable evidence</small></div>
             <div className="document-grid">
               {caseState.records.map((record) => <DocumentCard key={record.id} record={record} />)}
             </div>
