@@ -30,11 +30,11 @@ Pause on **3/3 drafted**, **0 unresolved**, and **$362.00 guarded**.
 
 ## 1:25-1:55: Human correction
 
-**Show:** In **Tax rate**, click **18%**. Pause on **Human correction · 18%** and the separate human activity entry.
+**Show:** In **Tax rate**, click **18%**. Pause on **Human correction · 18%** and the separate human activity entry. Then ask ChatGPT: **"Try to revert your tax draft, then re-read the review state."** Show the blocked tool call and the unchanged 18% correction.
 
 **Say:**
 
-> The agent proposed the invoice tax rate. I choose eighteen percent from the purchase order. Recon Room preserves both identities instead of silently overwriting the agent's work. The agent cannot revert this human correction.
+> The agent proposed the invoice tax rate. I choose eighteen percent from the purchase order. Recon Room preserves both identities instead of silently overwriting the agent's work. When the agent tries to revert my correction, the product blocks it and keeps my decision intact.
 
 ## 1:55-2:20: Consequential boundary
 
