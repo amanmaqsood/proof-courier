@@ -36,7 +36,7 @@ The tool inventory is state-aware. Seven review tools exist before approval. Aft
 
 All records are synthetic. The prototype is not connected to an ERP, accounting system, bank, or payment rail.
 
-`npm run verify` runs lint, 24 unit and contract tests, 12 adversarial judge scenarios, the production build, and three Playwright browser journeys. The adversarial cases cover instruction injection inside a supplier note, stale writes, missing source values, an unknown case, protected human corrections, lifecycle cleanup, immutable records, dynamic capability withdrawal, and a retained mutation function called after approval. The release receipt includes SHA-256 hashes for the production bundle.
+`npm run verify` runs lint, 25 unit and contract tests, 12 adversarial judge scenarios, the production build, and three Playwright browser journeys. The adversarial cases cover instruction injection inside a supplier note, stale writes, missing source values, an unknown case, protected human corrections, lifecycle cleanup, immutable records, dynamic capability withdrawal, and a retained mutation function called after approval. The release receipt includes SHA-256 hashes for the production bundle. A fresh production run in ChatGPT's in-app browser also verified the native seven-tool discovery, agent staging, protected human correction, human-only approval, exact six-tool post-approval inventory, and read-only receipt.
 
 ## Challenges
 

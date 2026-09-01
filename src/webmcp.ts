@@ -22,7 +22,6 @@ declare global {
   interface Document {
     modelContext?: {
       registerTool(tool: ToolDefinition, options?: { signal?: AbortSignal }): void | Promise<void>
-      unregisterTool?(name: string): void | Promise<void>
     }
   }
 }
@@ -60,7 +59,6 @@ export function registerReconRoomTools(bridge: Bridge) {
     }
   }
   const modelContext = context
-  const lifecycle = new AbortController()
 
   const tools: ToolDefinition[] = [
     {
@@ -290,6 +288,7 @@ export function registerReconRoomTools(bridge: Bridge) {
 
   const toolsByName = new Map(tools.map((tool) => [tool.name, tool]))
   const activeNames = new Set<string>()
+  const registrationControllers = new Map<string, AbortController>()
 
   function desiredNames(caseState: ReconciliationCase) {
     const base = ['list_cases', 'inspect_case', 'compare_records', 'open_evidence', 'get_review_state']
@@ -301,17 +300,18 @@ export function registerReconRoomTools(bridge: Bridge) {
   function sync(caseState: ReconciliationCase) {
     const desired = desiredNames(caseState)
     const desiredSet = new Set(desired)
-    if (modelContext.unregisterTool) {
-      for (const name of activeNames) {
-        if (!desiredSet.has(name)) {
-          modelContext.unregisterTool(name)
-          activeNames.delete(name)
-        }
+    for (const name of activeNames) {
+      if (!desiredSet.has(name)) {
+        registrationControllers.get(name)?.abort()
+        registrationControllers.delete(name)
+        activeNames.delete(name)
       }
     }
     for (const name of desired) {
       if (!activeNames.has(name)) {
-        modelContext.registerTool(toolsByName.get(name)!, { signal: lifecycle.signal })
+        const controller = new AbortController()
+        registrationControllers.set(name, controller)
+        modelContext.registerTool(toolsByName.get(name)!, { signal: controller.signal })
         activeNames.add(name)
       }
     }
@@ -320,7 +320,8 @@ export function registerReconRoomTools(bridge: Bridge) {
 
   const initial = sync(bridge.getCase())
   function dispose() {
-    lifecycle.abort()
+    for (const controller of registrationControllers.values()) controller.abort()
+    registrationControllers.clear()
     activeNames.clear()
   }
   return { ...initial, sync, dispose }

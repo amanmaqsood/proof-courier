@@ -74,7 +74,7 @@ Open `http://localhost:5173`.
 npm run verify
 ```
 
-The one-command release gate runs lint, 24 unit/contract tests, 12 high-risk judge scenarios, the production build, and three Playwright browser journeys. The browser suite installs a native-shaped `document.modelContext` harness, drives the registered tools through the visible product, records a human correction, approves through the human-only control, and verifies the live tool inventory changes from seven review capabilities to six read-only/post-approval capabilities.
+The one-command release gate runs lint, 25 unit/contract tests, 12 high-risk judge scenarios, the production build, and three Playwright browser journeys. The browser suite installs a native-shaped `document.modelContext` harness, drives the registered tools through the visible product, records a human correction, approves through the human-only control, and verifies the live tool inventory changes from seven review capabilities to six read-only/post-approval capabilities.
 
 The judge scenarios produce a portable receipt at [`artifacts/evals/scenario-results.json`](artifacts/evals/scenario-results.json). The complete gate writes build hashes and check results to [`artifacts/release/verification.json`](artifacts/release/verification.json). See [`docs/EVALS.md`](docs/EVALS.md) for the evaluation plan, [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) for the trust boundaries, and [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) for the under-three-minute submission film.
 

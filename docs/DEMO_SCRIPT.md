@@ -50,7 +50,7 @@ Pause on **3/3 drafted**, **0 unresolved**, and **$362.00 guarded**.
 
 **Say:**
 
-> The release gate passes 24 unit and contract tests, 12 adversarial judge scenarios, three Chromium journeys, and a production build. The tests include stale writes, instruction injection, immutable evidence, capability withdrawal, and the complete mobile journey.
+> The release gate passes 25 unit and contract tests, 12 adversarial judge scenarios, three Chromium journeys, and a production build. The tests include stale writes, instruction injection, immutable evidence, capability withdrawal, and the complete mobile journey.
 
 ## 2:40-2:50: Close
 

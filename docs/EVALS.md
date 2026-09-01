@@ -29,7 +29,7 @@ Run `npm run e2e` for three Chromium journeys against the actual rendered app:
 2. the synthetic instruction-injection fixture opens only as quarantined evidence and cannot create an approval tool;
 3. the guided journey remains usable at 390px without horizontal overflow.
 
-`npm run verify` is the release gate. It runs lint, all 24 unit/contract tests, the 12 judge scenarios, the production build, and the three browser journeys before writing [`artifacts/release/verification.json`](../artifacts/release/verification.json) with check results and SHA-256 hashes for the production bundle.
+`npm run verify` is the release gate. It runs lint, all 25 unit/contract tests, the 12 judge scenarios, the production build, and the three browser journeys before writing [`artifacts/release/verification.json`](../artifacts/release/verification.json) with check results and SHA-256 hashes for the production bundle.
 
 ## Agent eval cases
 

@@ -2,7 +2,7 @@
   "suite": "Recon Room release gate",
   "command": "npm run verify",
   "success": true,
-  "generatedAt": "2026-09-01T04:33:30.622Z",
+  "generatedAt": "2026-09-01T05:27:18.204Z",
   "sourceRevision": "local-working-tree",
   "checks": [
     {
@@ -35,19 +35,19 @@
   ],
   "buildArtifacts": [
     {
-      "path": "dist/assets/index-CkqLRHHJ.js",
-      "bytes": 226034,
-      "sha256": "4829b62145105287dd443900ad2d75ec95825cca545e785a33e03ce2f26ea458"
-    },
-    {
       "path": "dist/assets/index-D7qkSIk3.css",
       "bytes": 20012,
       "sha256": "c09dae45dd8c73c8950f0e92cb07087671f78fa0eb0c09ce1973711c21bfc26f"
     },
     {
+      "path": "dist/assets/index-WHl-i0kw.js",
+      "bytes": 226085,
+      "sha256": "64d9a5a03eb3f4c9cc2fb53487b981f1d21c7dfe27f8d93cfc14cfbd50fd8fb3"
+    },
+    {
       "path": "dist/index.html",
       "bytes": 570,
-      "sha256": "ef6d8e813024f3ad9a61845cb304ea9ee10b14d3d514b64e4d7da8e91516e7f3"
+      "sha256": "b886e56b378a169aef3021140cac76bb799b034ba104dd78fae21c2b3bc709ec"
     }
   ]
 }

@@ -26,7 +26,6 @@ function createHarness(initial: ReconciliationCase = createSeedCase()) {
       tools.set(tool.name, tool as RegisteredTool)
       options?.signal?.addEventListener('abort', () => tools.delete(tool.name), { once: true })
     },
-    unregisterTool: (name) => { tools.delete(name) },
   }
   const registration = registerReconRoomTools({
     getCase: () => current,

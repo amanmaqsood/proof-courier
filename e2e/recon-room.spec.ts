@@ -22,9 +22,6 @@ async function installWebMcpHarness(page: Page) {
           tools.set(tool.name, tool)
           options?.signal?.addEventListener('abort', () => tools.delete(tool.name), { once: true })
         },
-        unregisterTool(name: string) {
-          tools.delete(name)
-        },
       },
     })
   })

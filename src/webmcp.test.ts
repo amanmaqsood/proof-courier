@@ -20,7 +20,6 @@ describe('WebMCP tool contract', () => {
         tools.set(tool.name, tool as RegisteredTool)
         options?.signal?.addEventListener('abort', () => tools.delete(tool.name), { once: true })
       },
-      unregisterTool: (name) => { tools.delete(name) },
     }
     let current = createSeedCase()
     let openedEvidence = ''
@@ -81,7 +80,6 @@ describe('WebMCP tool contract', () => {
         tools.set(tool.name, tool as RegisteredTool)
         options?.signal?.addEventListener('abort', () => tools.delete(tool.name), { once: true })
       },
-      unregisterTool: (name) => { tools.delete(name) },
     }
     let current: ReconciliationCase = createSeedCase()
     const registration = registerReconRoomTools({
@@ -120,5 +118,42 @@ describe('WebMCP tool contract', () => {
     expect(tools.has('revert_resolution')).toBe(false)
     const result = tools.get('get_approval_receipt')!.execute({ caseId: 'RR-1042' }) as { data: unknown }
     expect(result.data).toMatchObject({ approvedBy: 'Aman', paymentInitiated: false })
+  })
+
+  it('withdraws state-specific tools through their registration signals', () => {
+    const tools = new Map<string, RegisteredTool>()
+    document.modelContext = {
+      registerTool: (tool, options) => {
+        tools.set(tool.name, tool as RegisteredTool)
+        options?.signal?.addEventListener('abort', () => tools.delete(tool.name), { once: true })
+      },
+    }
+    let current: ReconciliationCase = createSeedCase()
+    const registration = registerReconRoomTools({
+      getCase: () => current,
+      setCase: (next) => { current = next },
+      focusDiscrepancy: () => undefined,
+      openEvidence: () => undefined,
+    })
+
+    for (const [discrepancyId, selectedSource] of [
+      ['qty-001', 'goodsReceipt'],
+      ['price-001', 'purchaseOrder'],
+      ['tax-001', 'purchaseOrder'],
+    ] as const) {
+      current = stageResolution(current, {
+        discrepancyId,
+        selectedSource,
+        reason: 'Reviewed against the source records.',
+        actor: 'agent',
+        expectedVersion: current.version,
+      }).case
+    }
+    current = approveCase(current, 'human').case
+    registration.sync(current)
+
+    expect(tools.has('stage_resolution')).toBe(false)
+    expect(tools.has('revert_resolution')).toBe(false)
+    expect(tools.has('get_approval_receipt')).toBe(true)
   })
 })
