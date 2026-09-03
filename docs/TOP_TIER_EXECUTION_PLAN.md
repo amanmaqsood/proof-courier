@@ -164,7 +164,7 @@ Invalid or stale transitions return structured recovery instructions. Tool regis
 - M3 origin separation: complete for the prototype. Dedicated public wallet and verifier projects return HTTP 200 with security headers; the deployed Playwright journey proves distinct origins, storage isolation, no peer-origin resource transport, and the agent-carried proof as the only bridge.
 - M4 automated Judge Mode slice: complete locally. The landing page now runs the real Request Firewall across safe, overreaching, and malicious scenarios; all judge-facing routes pass desktop, 390px mobile, keyboard, and zero serious/critical automated accessibility checks. Five-person comprehension review remains open.
 - Consent binding hardening: complete locally. Proof Envelope v2 now signs the exact approved claim set, approval time, and one-use grant; widened or temporally impossible consent is rejected.
-- Current honest state: `TOP-TIER CANDIDATE, NOT YET PUBLIC-FIELD LEADING`. Fresh deployment parity, a real native-browser rerun of the hardened envelope, independent human/security review, the 100-run multi-agent evaluation target, and two consecutive benchmark passes remain open.
+- Current honest state: `TOP-TIER CANDIDATE, NOT YET PUBLIC-FIELD LEADING`. Deployment parity and a real native-browser rerun of the hardened envelope now pass. Independent human/security review, the 100-run multi-agent evaluation target, and two consecutive benchmark passes remain open.
 
 ### M0 — Baseline and claim discipline
 

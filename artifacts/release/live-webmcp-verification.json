@@ -1,9 +1,16 @@
 {
   "receiptVersion": 2,
-  "capturedAt": "2026-09-01T13:02:43Z",
-  "sourceCommit": "a2639167b2d98e4b963a354ce80950cb07a8a26b",
-  "deploymentId": "dpl_7FSC6jEWzudkpNsWfkgCAqSSAZm6",
-  "baseUrl": "https://proof-courier-orcin.vercel.app",
+  "capturedAt": "2026-09-03T18:25:47Z",
+  "sourceCommit": "e64c680cbdc7ba933d1684c9d070bb2ed40f1031",
+  "deploymentIds": {
+    "primary": "dpl_9hzoSMMf3h1BhrF8frdrrEPy9LmA",
+    "wallet": "dpl_CCVgE5pVdLt9GV3nM59fXHJJcBXe",
+    "verifier": "dpl_7HpjrzoACkd97LTpwL9Tj7WFvkhG"
+  },
+  "origins": {
+    "wallet": "https://proof-courier-wallet.vercel.app",
+    "verifier": "https://proof-courier-verifier.vercel.app"
+  },
   "host": "OpenAI Codex in-app browser",
   "execution": "native WebMCP capability calls across separate live wallet and verifier tabs",
   "consent": {
@@ -17,11 +24,13 @@
       "residency_eligible"
     ],
     "audience": "openbridge-scholarship-2026",
-    "purpose": "Verify minimum eligibility for the Open Web Fellowship."
+    "purpose": "Verify minimum eligibility for the Open Web Fellowship.",
+    "grantMaxUses": 1,
+    "approvalIncludedInSignedEnvelope": true
   },
   "export": {
     "status": "passed",
-    "encodedProofLength": 4288,
+    "encodedProofLength": 4422,
     "privateFieldsDisclosed": [],
     "privateValueLeakDetected": false,
     "exportCapabilityPresentBeforeHumanConsent": false,
