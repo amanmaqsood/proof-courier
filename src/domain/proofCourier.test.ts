@@ -146,14 +146,29 @@ describe('Proof Courier disclosure contract', () => {
   })
 
   it('exports a v2 envelope that identifies—but never supplies—the trusted issuer key', async () => {
-    const bundle = await createProofBundle(request())
+    const bundle = await createProofBundle(request(), '2026-09-01T06:02:00.000Z')
 
     expect(bundle).toMatchObject({
       version: 2,
       issuerId: 'openbridge-university-demo-registry',
       issuerKeyId: 'openbridge-p256-2026-01',
+      consent: {
+        grantedAt: '2026-09-01T06:02:00.000Z',
+        maxUses: 1,
+        claimIds: scholarshipRequirements.map((item) => item.id),
+      },
     })
     expect(bundle).not.toHaveProperty('issuerPublicJwk')
+  })
+
+  it('rejects a widened or temporally impossible consent grant', async () => {
+    const widened = clone(await createProofBundle(request(), '2026-09-01T06:02:00.000Z'))
+    Object.assign(widened.consent, { maxUses: 2 })
+    await expect(verifyProofBundle(widened, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_consent' })
+
+    const late = clone(await createProofBundle(request(), '2026-09-01T06:02:00.000Z'))
+    late.consent.grantedAt = '2026-09-01T06:11:00.000Z'
+    await expect(verifyProofBundle(late, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_consent' })
   })
 
   it('rejects a credential re-signed by an untrusted replacement issuer key', async () => {

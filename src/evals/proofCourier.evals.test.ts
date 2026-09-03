@@ -246,4 +246,14 @@ describe('Proof Courier judge scenarios', () => {
       ttlSeconds: 86_400,
     })).toMatchObject({ decision: 'counterproposal', proposedRequest: { ttlSeconds: 600 }, dataLeavesWallet: false })
   })
+
+  it('E21 rejects a consent grant widened after the person approved it', async () => {
+    const bundle = clone(await createProofBundle(request(), '2026-09-01T06:02:00.000Z'))
+    Object.assign(bundle.consent, { maxUses: 2 })
+
+    await expect(verifyProofBundle(bundle, { now: '2026-09-01T06:05:00.000Z' })).resolves.toMatchObject({
+      accepted: false,
+      code: 'invalid_consent',
+    })
+  })
 })

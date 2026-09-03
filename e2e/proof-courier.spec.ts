@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
 
 const walletUrl = process.env.PLAYWRIGHT_WALLET_URL ?? 'http://127.0.0.1:4174/wallet'
 
@@ -136,12 +137,32 @@ test('the landing, wallet, verifier, and evidence room remain usable at 390px', 
   await expect(page.getByRole('heading', { name: /Trust should be visible/u })).toBeVisible()
 })
 
+test('all judge-facing pages have no serious or critical accessibility violations', async ({ page }) => {
+  for (const path of ['/', '/wallet', '/fellowship', '/evidence']) {
+    await page.goto(path)
+    const results = await new AxeBuilder({ page }).analyze()
+    const blocking = results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))
+    expect(blocking, `${path}: ${blocking.map((item) => `${item.id} (${item.nodes.length})`).join(', ')}`).toEqual([])
+  }
+})
+
+test('the landing page scenario lab demonstrates allow, counterproposal, and block decisions', async ({ page }) => {
+  await page.goto('/')
+
+  await expect(page.getByTestId('firewall-decision')).toHaveText('COUNTERPROPOSAL')
+  await page.getByRole('button', { name: 'Malicious request' }).click()
+  await expect(page.getByTestId('firewall-decision')).toHaveText('BLOCKED')
+  await expect(page.getByText('No counterproposal', { exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Safe minimum' }).click()
+  await expect(page.getByTestId('firewall-decision')).toHaveText('ALLOWED')
+})
+
 test('the public evidence room exposes the complete judge proof without a product claim gap', async ({ page }) => {
   await page.goto('/evidence')
 
   await expect(page.getByRole('heading', { name: /Trust should be visible/u })).toBeVisible()
-  await expect(page.getByText('20/20', { exact: true })).toBeVisible()
-  await expect(page.getByText('4/4', { exact: true })).toBeVisible()
+  await expect(page.getByText('21/21', { exact: true })).toBeVisible()
+  await expect(page.getByText('6/6', { exact: true })).toBeVisible()
   await expect(page.getByText('0 → 1 → 0', { exact: true })).toBeVisible()
   await expect(page.getByText('A capability that lives for exactly one call.', { exact: true })).toBeVisible()
   await expect(page.getByText('Agent submission capability: absent', { exact: true })).toBeVisible()

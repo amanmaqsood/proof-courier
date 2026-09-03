@@ -81,9 +81,9 @@ There is deliberately no tool whose name or behavior can consent, approve, or su
 npm run verify
 ```
 
-The public `/evidence` route turns the release receipts into an inspectable judge surface: native WebMCP lifecycle proof, 20 adversarial scenarios, four browser journeys, bundle isolation, exact source/deployment identifiers, and explicit limitations.
+The public `/evidence` route turns the release receipts into an inspectable judge surface: native WebMCP lifecycle proof, 21 adversarial scenarios, six browser journeys, bundle isolation, exact source/deployment identifiers, and explicit limitations.
 
-The release gate runs lint, unit and contract tests, 20 named adversarial judge scenarios, a production build, wallet/verifier runtime-isolation checks, and four browser journeys. It writes machine-readable evidence to:
+The release gate runs lint, unit and contract tests, 20 named adversarial judge scenarios, a production build, wallet/verifier runtime-isolation checks, and six browser journeys, including the scenario lab and automated serious/critical accessibility scanning on every judge-facing page. It writes machine-readable evidence to:
 
 - `artifacts/evals/scenario-results.json`
 - `artifacts/e2e/results.json`

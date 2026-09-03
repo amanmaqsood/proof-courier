@@ -162,8 +162,9 @@ Invalid or stale transitions return structured recovery instructions. Tool regis
 - M1 trusted issuer and cryptographic correctness: complete for the prototype scope. Proof Envelope v2 removes sender-supplied trust, binds the entire presentation, rejects duplicate claims and invalid lifetimes, fails closed on malformed envelopes, and serializes concurrent nonce consumption.
 - M2 Request Firewall: complete locally. Both wallet and verifier expose registered read-only negotiation tools; the browser journey proves overreach -> zero export -> counterproposal -> acceptance -> human consent -> one-use proof.
 - M3 origin separation: complete for the prototype. Dedicated public wallet and verifier projects return HTTP 200 with security headers; the deployed Playwright journey proves distinct origins, storage isolation, no peer-origin resource transport, and the agent-carried proof as the only bridge.
-- M4 first visual slice: complete locally. The landing page now explains the Request Firewall on desktop and 390px mobile; the full Judge Mode scenario selector remains pending.
-- Current honest state: `TOP-TIER CANDIDATE, NOT YET PUBLIC-FIELD LEADING`. Deployment parity, real native-browser rerun, accessibility/performance evidence, independent review, and the two consecutive benchmark passes remain open.
+- M4 automated Judge Mode slice: complete locally. The landing page now runs the real Request Firewall across safe, overreaching, and malicious scenarios; all judge-facing routes pass desktop, 390px mobile, keyboard, and zero serious/critical automated accessibility checks. Five-person comprehension review remains open.
+- Consent binding hardening: complete locally. Proof Envelope v2 now signs the exact approved claim set, approval time, and one-use grant; widened or temporally impossible consent is rejected.
+- Current honest state: `TOP-TIER CANDIDATE, NOT YET PUBLIC-FIELD LEADING`. Fresh deployment parity, a real native-browser rerun of the hardened envelope, independent human/security review, the 100-run multi-agent evaluation target, and two consecutive benchmark passes remain open.
 
 ### M0 — Baseline and claim discipline
 

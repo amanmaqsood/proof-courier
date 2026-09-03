@@ -67,9 +67,10 @@ async function verifyProofBundleUnsafe(
   const now = Date.parse(options.now)
   const issuedAt = Date.parse(bundle.issuedAt)
   const expiresAt = Date.parse(bundle.expiresAt)
+  const consentGrantedAt = Date.parse(bundle.consent.grantedAt)
   const credentialIssuedAt = Date.parse(bundle.credential.issuedAt)
   const credentialValidUntil = Date.parse(bundle.credential.validUntil)
-  const allTimes = [now, issuedAt, expiresAt, credentialIssuedAt, credentialValidUntil]
+  const allTimes = [now, issuedAt, expiresAt, consentGrantedAt, credentialIssuedAt, credentialValidUntil]
   if (allTimes.some((value) => !Number.isFinite(value))) return fail('invalid_timestamps', 'Proof contains a malformed timestamp.')
   if (issuedAt > now || credentialIssuedAt > now) return fail('invalid_timestamps', 'Proof or credential is not valid yet.')
   if (expiresAt <= issuedAt || expiresAt - issuedAt > 10 * 60_000) return fail('invalid_timestamps', 'Proof lifetime must be greater than zero and no longer than ten minutes.')
@@ -86,6 +87,20 @@ async function verifyProofBundleUnsafe(
     const proof = bundle.disclosures.find((item) => item.claim.id === requirement.id)
     if (!proof) return fail('missing_claim', `Missing required claim: ${requirement.id}.`)
     if (proof.claim.value !== requirement.expectedValue) return fail('claim_mismatch', `Claim ${requirement.id} does not satisfy the published rule.`)
+  }
+
+  const disclosedPublicClaimIds = claimIds.filter((id) => id !== 'holder_public_key')
+  const consentClaimIds = bundle.consent.claimIds
+  const sameClaimSet = new Set(consentClaimIds).size === consentClaimIds.length
+    && consentClaimIds.length === disclosedPublicClaimIds.length
+    && consentClaimIds.every((id) => disclosedPublicClaimIds.includes(id))
+  if (
+    bundle.consent.maxUses !== 1
+    || consentGrantedAt < issuedAt
+    || consentGrantedAt > expiresAt
+    || !sameClaimSet
+  ) {
+    return fail('invalid_consent', 'Proof is not bound to one valid human consent grant for the exact disclosed claims.')
   }
 
   const issuerKey = await crypto.subtle.importKey('jwk', trustedIssuerPublicJwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify'])
@@ -123,6 +138,7 @@ async function verifyProofBundleUnsafe(
     nonce: bundle.nonce,
     issuedAt: bundle.issuedAt,
     expiresAt: bundle.expiresAt,
+    consent: bundle.consent,
     credential: bundle.credential,
     issuerSignature: bundle.issuerSignature,
     disclosures: bundle.disclosures,
@@ -161,6 +177,7 @@ function signablePresentation(bundle: Omit<ProofBundle, 'holderSignature'>) {
     nonce: bundle.nonce,
     issuedAt: bundle.issuedAt,
     expiresAt: bundle.expiresAt,
+    consent: bundle.consent,
     credential: bundle.credential,
     issuerSignature: bundle.issuerSignature,
     disclosures: bundle.disclosures,

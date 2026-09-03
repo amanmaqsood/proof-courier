@@ -119,7 +119,7 @@ export function registerWalletTools(bridge: {
         const current = bridge.getState()
         requireVersion(current.version, Number(expectedVersion))
         if (!current.draft || current.draft.status !== 'consented') throw new Error('Export is unavailable until the person approves the visible disclosure card.')
-        const bundle = await createProofBundle(current.draft.request)
+        const bundle = await createProofBundle(current.draft.request, current.draft.consentedAt)
         const encodedBundle = encodeProofBundle(bundle)
         const exportedAt = new Date().toISOString()
         const next: WalletState = {

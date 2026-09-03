@@ -59,6 +59,11 @@ export type ProofBundle = {
   nonce: string
   issuedAt: string
   expiresAt: string
+  consent: {
+    grantedAt: string
+    maxUses: 1
+    claimIds: PublicClaimId[]
+  }
   credential: CredentialMetadata
   issuerSignature: string
   disclosures: DisclosureProof[]
@@ -73,6 +78,7 @@ export type VerificationResult = {
     | 'wrong_purpose'
     | 'expired'
     | 'invalid_timestamps'
+    | 'invalid_consent'
     | 'invalid_envelope'
     | 'replayed'
     | 'over_disclosure'
@@ -168,7 +174,10 @@ export function getScholarshipRequest(nonce = 'request-OWF-2026-001') {
   }
 }
 
-export async function createProofBundle(request: ProofRequest): Promise<ProofBundle> {
+export async function createProofBundle(
+  request: ProofRequest,
+  consentGrantedAt = request.issuedAt,
+): Promise<ProofBundle> {
   const uniqueClaimIds = [...new Set(request.claimIds)]
   if (uniqueClaimIds.length !== request.claimIds.length) throw new Error('Duplicate claim IDs are not allowed.')
   for (const claimId of uniqueClaimIds) {
@@ -185,6 +194,11 @@ export async function createProofBundle(request: ProofRequest): Promise<ProofBun
     nonce: request.nonce,
     issuedAt: request.issuedAt,
     expiresAt: request.expiresAt,
+    consent: {
+      grantedAt: consentGrantedAt,
+      maxUses: 1,
+      claimIds: [...request.claimIds],
+    },
     credential,
     issuerSignature,
     disclosures: [...requestedProofs, holderKeyProof],
@@ -216,6 +230,7 @@ function signablePresentation(bundle: Omit<ProofBundle, 'holderSignature'>) {
     nonce: bundle.nonce,
     issuedAt: bundle.issuedAt,
     expiresAt: bundle.expiresAt,
+    consent: bundle.consent,
     credential: bundle.credential,
     issuerSignature: bundle.issuerSignature,
     disclosures: bundle.disclosures,

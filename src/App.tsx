@@ -31,6 +31,7 @@ import {
   getScholarshipRequest,
   scholarshipRequirements,
 } from './domain/proofVerifier'
+import { evaluateDisclosureRequest } from './domain/requestFirewall'
 import {
   consentToWalletDraft,
   createVerifierState,
@@ -74,6 +75,25 @@ const webmcpSmokeUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/a
 const productionCrossOriginUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/production-cross-origin.json'
 const publicWalletUrl = import.meta.env.PROD ? 'https://proof-courier-wallet.vercel.app/wallet' : '/wallet'
 const publicVerifierUrl = import.meta.env.PROD ? 'https://proof-courier-verifier.vercel.app/fellowship' : '/fellowship'
+type FirewallScenario = 'safe' | 'overreach' | 'malicious'
+const minimumClaimIds = scholarshipRequirements.map((item) => item.id)
+const firewallScenarios = {
+  safe: {
+    label: 'Safe minimum',
+    items: ['Five derived claims', 'Correct purpose', 'One-use nonce', '10-minute proof'],
+    request: { audience: SCHOLARSHIP_AUDIENCE, purpose: SCHOLARSHIP_PURPOSE, claimIds: minimumClaimIds, nonce: 'scenario-safe-001', ttlSeconds: 600 },
+  },
+  overreach: {
+    label: 'Asks too much',
+    items: ['Exact date of birth', 'Exact GPA', 'Home address', '24-hour reusable proof'],
+    request: { audience: SCHOLARSHIP_AUDIENCE, purpose: SCHOLARSHIP_PURPOSE, claimIds: minimumClaimIds, nonce: 'scenario-overreach-001', ttlSeconds: 86_400, requestedPrivateFields: ['date_of_birth', 'exact_gpa', 'home_address'] },
+  },
+  malicious: {
+    label: 'Malicious request',
+    items: ['Unknown recipient', 'Credit-scoring purpose', 'Automatic submission', 'Raw private records'],
+    request: { audience: 'unknown-verifier', purpose: 'Use this proof for credit scoring.', claimIds: minimumClaimIds, nonce: 'scenario-malicious-001', ttlSeconds: 600, requestedPrivateFields: ['date_of_birth'], requestsAutomaticSubmission: true },
+  },
+} as const
 
 function App() {
   const path = window.location.pathname.replace(/\/+$/u, '') || '/'
@@ -93,6 +113,12 @@ function Brand({ context }: { context?: string }) {
 }
 
 function LandingPage() {
+  const [scenarioKey, setScenarioKey] = useState<FirewallScenario>('overreach')
+  const scenario = firewallScenarios[scenarioKey]
+  const firewall = evaluateDisclosureRequest({ ...scenario.request, claimIds: [...scenario.request.claimIds], requestedPrivateFields: 'requestedPrivateFields' in scenario.request ? [...scenario.request.requestedPrivateFields] : [] })
+  const proposedItems = firewall.proposedRequest
+    ? ['Age over 18', 'GPA band', 'Eligible residency', '10-minute, one-use proof']
+    : []
   return (
     <div className="site-shell landing-shell">
       <header className="site-header">
@@ -110,7 +136,7 @@ function LandingPage() {
               <a className="primary-action" href={publicVerifierUrl} target="_blank">Open verifier <ExternalLink size={15} /></a>
               <a className="secondary-action" href={publicWalletUrl} target="_blank">Open private wallet <ExternalLink size={15} /></a>
             </div>
-            <a className="release-proof-link" href="/evidence"><BadgeCheck size={17} /><span><strong>Release proof passed</strong><small>Native WebMCP · 20/20 attacks · 4/4 browser journeys · 100/100 audit</small></span><ChevronRight size={15} /></a>
+            <a className="release-proof-link" href="/evidence"><BadgeCheck size={17} /><span><strong>Release proof passed</strong><small>Native WebMCP · 21/21 attacks · 6/6 browser journeys · 100/100 audit</small></span><ChevronRight size={15} /></a>
           </div>
 
           <div className="proof-route" aria-label="Private wallet to agent to verifier flow">
@@ -147,17 +173,24 @@ function LandingPage() {
             <div><p className="section-kicker">Request Firewall</p><h2 id="firewall-title">When a site asks for too much, the agent negotiates for less.</h2></div>
             <p>Before a consent card exists, the wallet inspects audience, purpose, fields, lifetime, and submission authority. Unsafe requests release nothing. Fixable requests receive a machine-readable counterproposal.</p>
           </div>
+          <div className="scenario-switcher" aria-label="Request Firewall scenarios">
+            {(Object.keys(firewallScenarios) as FirewallScenario[]).map((key) => (
+              <button key={key} aria-pressed={scenarioKey === key} onClick={() => setScenarioKey(key)}>{firewallScenarios[key].label}</button>
+            ))}
+          </div>
           <div className="firewall-flow">
-            <article className="overreach-card">
-              <div><ShieldAlert size={18} /><span>Incoming request</span><strong>OVERREACH</strong></div>
-              <ul><li>Exact date of birth</li><li>Exact GPA</li><li>Home address</li><li>24-hour reusable proof</li></ul>
+            <article className={`overreach-card request-${firewall.decision}`}>
+              <div><ShieldAlert size={18} /><span>Incoming request</span><strong>{scenario.label.toUpperCase()}</strong></div>
+              <ul>{scenario.items.map((item) => <li key={item}>{item}</li>)}</ul>
               <small>Data released · 0 fields</small>
             </article>
-            <div className="firewall-decision"><span>BLOCKED</span><ShieldCheck size={28} /><strong>wallet_evaluate_request</strong><small>read-only · deterministic</small></div>
-            <article className="counterproposal-card">
-              <div><BadgeCheck size={18} /><span>Wallet counterproposal</span><strong>MINIMUM</strong></div>
-              <ul><li>Age over 18</li><li>GPA band</li><li>Eligible residency</li><li>10-minute, one-use proof</li></ul>
-              <small>Still requires visible human consent</small>
+            <div className="firewall-decision"><span data-testid="firewall-decision">{firewall.decision.toUpperCase()}</span><ShieldCheck size={28} /><strong>wallet_evaluate_request</strong><small>read-only · deterministic</small></div>
+            <article className={`counterproposal-card result-${firewall.decision}`} aria-live="polite">
+              <div><BadgeCheck size={18} /><span>Wallet result</span><strong>{firewall.proposedRequest ? 'SAFE PLAN' : 'STOP'}</strong></div>
+              {firewall.proposedRequest
+                ? <ul>{proposedItems.map((item) => <li key={item}>{item}</li>)}</ul>
+                : <div className="no-counterproposal"><strong>No counterproposal</strong><p>The recipient, purpose, or requested authority is unsafe. Start over with the published verifier policy.</p></div>}
+              <small>{firewall.summary}</small>
             </article>
           </div>
           <div className="firewall-contract"><code>overreach → zero export → safe counterproposal → human consent → one-use proof</code><span>Two sites can negotiate through WebMCP without copying private records into chat.</span></div>
@@ -431,7 +464,7 @@ function EvidencePage() {
 
         <section className="evidence-metrics" aria-label="Release evidence summary">
           <article><strong>{evalReceipt.passed}/{evalReceipt.total}</strong><span>adversarial scenarios</span><small>Audience, purpose, expiry, replay, tampering, authority</small></article>
-          <article><strong>4/4</strong><span>browser journeys</span><small>Cross-tab flow, recovery, evidence, 390px viewport</small></article>
+          <article><strong>6/6</strong><span>browser journeys</span><small>Cross-origin flow, scenario lab, recovery, evidence, mobile, accessibility</small></article>
           <article><strong>{nekudaAudit.score}/100</strong><span>independent tool audit</span><small>Zero findings across definitions, schemas, toolset, and safety</small></article>
           <article><strong>0 → 1 → 0</strong><span>export capability</span><small>Absent, human-unlocked, then withdrawn</small></article>
         </section>

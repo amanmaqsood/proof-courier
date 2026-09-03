@@ -2,9 +2,9 @@
   "suite": "Proof Courier adversarial judge scenarios",
   "command": "npm run eval",
   "success": true,
-  "passed": 20,
+  "passed": 21,
   "failed": 0,
-  "total": 20,
+  "total": 21,
   "scenarios": [
     {
       "id": "E1",
@@ -104,6 +104,11 @@
     {
       "id": "E20",
       "title": "shortens excessive proof lifetime without releasing data",
+      "status": "passed"
+    },
+    {
+      "id": "E21",
+      "title": "rejects a consent grant widened after the person approved it",
       "status": "passed"
     }
   ]
