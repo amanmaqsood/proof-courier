@@ -44,21 +44,40 @@ test('human consent unlocks one cross-tab proof and keeps final submission human
   await installWebMcpHarness(wallet)
 
   await fellowship.goto('/fellowship')
-  await wallet.goto('/wallet')
+  await wallet.goto('http://127.0.0.1:4174/wallet')
+
+  expect(new URL(fellowship.url()).origin).not.toBe(new URL(wallet.url()).origin)
+  await wallet.evaluate(() => localStorage.setItem('wallet-only-sentinel', 'private-origin'))
+  expect(await fellowship.evaluate(() => localStorage.getItem('wallet-only-sentinel'))).toBeNull()
 
   await expect(fellowship.getByRole('heading', { name: 'Prove eligibility without sending the file.' })).toBeVisible()
   await expect(wallet.getByRole('heading', { name: 'Your credential wallet' })).toBeVisible()
   await expect.poll(() => toolNames(fellowship)).toEqual([
-    'fellowship_get_requirements', 'fellowship_verify_proof', 'fellowship_get_verification_state',
+    'fellowship_get_requirements', 'fellowship_evaluate_counterproposal', 'fellowship_verify_proof', 'fellowship_get_verification_state',
   ])
   await expect.poll(() => toolNames(wallet)).toEqual([
-    'wallet_get_summary', 'wallet_prepare_disclosure', 'wallet_get_disclosure_state',
+    'wallet_get_summary', 'wallet_evaluate_request', 'wallet_prepare_disclosure', 'wallet_get_disclosure_state',
   ])
 
   const request = await callTool(fellowship, 'fellowship_get_requirements', {}) as {
     data: { audience: string; purpose: string; nonce: string; requiredClaims: Array<{ id: string }> }
   }
   await callTool(wallet, 'wallet_get_summary', {})
+  const firewall = await callTool(wallet, 'wallet_evaluate_request', {
+    audience: request.data.audience,
+    purpose: request.data.purpose,
+    claimIds: request.data.requiredClaims.map((item) => item.id),
+    nonce: request.data.nonce,
+    ttlSeconds: 86_400,
+    requestedPrivateFields: ['date_of_birth', 'exact_gpa', 'home_address'],
+    requestsAutomaticSubmission: false,
+  }) as { data: { decision: string; dataLeavesWallet: boolean; proposedRequest: Record<string, unknown> } }
+  expect(firewall.data).toMatchObject({ decision: 'counterproposal', dataLeavesWallet: false })
+  await expect(wallet.getByRole('heading', { name: 'Waiting for a request' })).toBeVisible()
+  const negotiated = await callTool(fellowship, 'fellowship_evaluate_counterproposal', firewall.data.proposedRequest) as {
+    data: { compatible: boolean }
+  }
+  expect(negotiated.data.compatible).toBe(true)
   await callTool(wallet, 'wallet_prepare_disclosure', {
     audience: request.data.audience,
     purpose: request.data.purpose,
@@ -91,6 +110,12 @@ test('human consent unlocks one cross-tab proof and keeps final submission human
   await expect(fellowship.getByRole('heading', { name: 'Minimum proof verified' })).toBeVisible()
   await expect(fellowship.getByText('Not received:', { exact: true })).toBeVisible()
   expect((await toolNames(fellowship)).some((name) => /submit|consent|approve/u.test(name))).toBe(false)
+  const walletOrigin = new URL(wallet.url()).origin
+  const verifierOrigin = new URL(fellowship.url()).origin
+  const fellowshipResources = await fellowship.evaluate(() => performance.getEntriesByType('resource').map((entry) => entry.name))
+  const walletResources = await wallet.evaluate(() => performance.getEntriesByType('resource').map((entry) => entry.name))
+  expect(fellowshipResources.some((url) => url.startsWith(walletOrigin))).toBe(false)
+  expect(walletResources.some((url) => url.startsWith(verifierOrigin))).toBe(false)
 
   await fellowship.getByRole('button', { name: 'Submit verified application' }).click()
   await expect(fellowship.getByRole('heading', { name: 'Human submission complete' })).toBeVisible()
@@ -113,7 +138,7 @@ test('the public evidence room exposes the complete judge proof without a produc
   await page.goto('/evidence')
 
   await expect(page.getByRole('heading', { name: /Trust should be visible/u })).toBeVisible()
-  await expect(page.getByText('15/15', { exact: true })).toBeVisible()
+  await expect(page.getByText('20/20', { exact: true })).toBeVisible()
   await expect(page.getByText('4/4', { exact: true })).toBeVisible()
   await expect(page.getByText('0 → 1 → 0', { exact: true })).toBeVisible()
   await expect(page.getByText('A capability that lives for exactly one call.', { exact: true })).toBeVisible()
@@ -125,7 +150,10 @@ test('rejected proof remains visible and recoverable without a submission action
   await installWebMcpHarness(page)
   await page.goto('/fellowship')
 
-  await expect(callTool(page, 'fellowship_verify_proof', { proofBundle: 'not-a-proof-bundle' })).rejects.toThrow()
-  await expect(page.getByText('Proof bundle is not valid encoded JSON.', { exact: true })).toBeVisible()
+  await expect(callTool(page, 'fellowship_verify_proof', { proofBundle: 'not-a-proof-bundle' })).resolves.toMatchObject({
+    isError: true,
+    data: { code: 'invalid_envelope' },
+  })
+  await expect(page.locator('#verification-result').getByText('Proof bundle is not valid encoded JSON.', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: /Submit application/u })).toHaveCount(0)
 })

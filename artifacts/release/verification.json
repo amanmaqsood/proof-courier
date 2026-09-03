@@ -2,7 +2,7 @@
   "suite": "Proof Courier release gate",
   "command": "npm run verify",
   "success": true,
-  "generatedAt": "2026-09-01T17:48:04.984Z",
+  "generatedAt": "2026-09-03T18:04:13.697Z",
   "sourceRevision": "local-working-tree",
   "checks": [
     {
@@ -19,7 +19,7 @@
       "name": "judge scenarios",
       "command": "npm run eval",
       "status": "passed",
-      "total": 15
+      "total": 20
     },
     {
       "name": "production build",
@@ -40,34 +40,34 @@
   ],
   "buildArtifacts": [
     {
-      "path": "dist/assets/index-CPKssGUh.css",
-      "bytes": 25801,
-      "sha256": "f403849095cd2f632a98734fb1f87eed0290099ea190453157b0a7d196410ed7"
+      "path": "dist/assets/index-B0N6Rm49.css",
+      "bytes": 28092,
+      "sha256": "29dd26dfe47e02c2a7bd5bea81c7e1e7ab2807a290379b4ec673cdeeda0a7741"
     },
     {
-      "path": "dist/assets/index-CPtW4pZB.js",
-      "bytes": 238655,
-      "sha256": "356c39193055752a78a32d565624d0b36bc7e1be88806e9c56f2eadecf265b0d"
+      "path": "dist/assets/index-DviPnXH2.js",
+      "bytes": 242839,
+      "sha256": "c7e1311cd90a5a6f5345afa964f62eda8b68587f1a8a61adc232545a291cf03e"
     },
     {
-      "path": "dist/assets/verifierWebmcp-C9Z2n-Tx.js",
-      "bytes": 3185,
-      "sha256": "fcdf4943ba7756559929e43993de328e6aebce01ac60067f850696473d4b696f"
+      "path": "dist/assets/verifierWebmcp-B3INxRS9.js",
+      "bytes": 5399,
+      "sha256": "e92d6866e8bfbb8e8d2230d0bd92f24bdfa7f88721a5caf06fa0aef269974dc3"
     },
     {
-      "path": "dist/assets/walletWebmcp-DjW_hv8K.js",
-      "bytes": 10992,
-      "sha256": "385753d3e7935cf29ae2ee3034a3c934edaf7e91d893aa8806bd4985fa6cb76a"
+      "path": "dist/assets/walletWebmcp-CGOc6qHt.js",
+      "bytes": 11648,
+      "sha256": "23987fe353c788ca958b8987ff53c811bb4a2d242a226857b3da7af12f2a3ffb"
     },
     {
-      "path": "dist/assets/webmcpRuntime-C5DDX8SR.js",
-      "bytes": 1214,
-      "sha256": "f1a52a6abcea7ff599f6a5d5629bbf68f44378ca292e872439fcdf3e0f36dd43"
+      "path": "dist/assets/webmcpRuntime-augijpXo.js",
+      "bytes": 2910,
+      "sha256": "e1d863ce87dcb17c49eb25ecd9470b6f134690fadf861254009b68c7e64e9cb0"
     },
     {
       "path": "dist/index.html",
       "bytes": 634,
-      "sha256": "659e32747c07630a47e6263ed68cb97a08d849b18edb3e9ada877434c431d9cc"
+      "sha256": "421c16118d7d30a4900c5480307ae89e26f117be7a5115c74da7c63851919584"
     }
   ]
 }

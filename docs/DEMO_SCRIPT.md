@@ -42,7 +42,7 @@
 
 ## 2:10–2:35 — adversarial proof
 
-**DO:** Open `/evidence`. Show the 0 → 1 → 0 capability timeline, the native WebMCP receipt, and the 15 of 15 adversarial matrix. Flash wrong audience, purpose, expiry, replay, over-disclosure, forgery, mutation, and capability-lifecycle scenarios.
+**DO:** Open `/evidence`. Show the 0 → 1 → 0 capability timeline, the native WebMCP receipt, and the 20 of 20 adversarial matrix. Flash request overreach, counterproposal, trusted issuer, wrong audience, purpose, expiry, replay, over-disclosure, forgery, mutation, and capability-lifecycle scenarios.
 
 **SAY:**
 

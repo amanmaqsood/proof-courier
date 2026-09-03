@@ -14,6 +14,7 @@ import {
   RotateCcw,
   Route,
   Send,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   Stamp,
@@ -105,7 +106,7 @@ function LandingPage() {
               <a className="primary-action" href="/fellowship" target="_blank">Open verifier <ExternalLink size={15} /></a>
               <a className="secondary-action" href="/wallet" target="_blank">Open private wallet <ExternalLink size={15} /></a>
             </div>
-            <a className="release-proof-link" href="/evidence"><BadgeCheck size={17} /><span><strong>Release proof passed</strong><small>Native WebMCP · 15/15 attacks · 4/4 browser journeys · 100/100 audit</small></span><ChevronRight size={15} /></a>
+            <a className="release-proof-link" href="/evidence"><BadgeCheck size={17} /><span><strong>Release proof passed</strong><small>Native WebMCP · 20/20 attacks · 4/4 browser journeys · 100/100 audit</small></span><ChevronRight size={15} /></a>
           </div>
 
           <div className="proof-route" aria-label="Private wallet to agent to verifier flow">
@@ -135,6 +136,27 @@ function LandingPage() {
           <div><strong>5 claims</strong><span>minimum disclosure</span></div>
           <div><strong>0 records</strong><span>copied into chat</span></div>
           <div><strong>Human</strong><span>consent and submission</span></div>
+        </section>
+
+        <section className="firewall-showcase" aria-labelledby="firewall-title">
+          <div className="firewall-heading">
+            <div><p className="section-kicker">Request Firewall</p><h2 id="firewall-title">When a site asks for too much, the agent negotiates for less.</h2></div>
+            <p>Before a consent card exists, the wallet inspects audience, purpose, fields, lifetime, and submission authority. Unsafe requests release nothing. Fixable requests receive a machine-readable counterproposal.</p>
+          </div>
+          <div className="firewall-flow">
+            <article className="overreach-card">
+              <div><ShieldAlert size={18} /><span>Incoming request</span><strong>OVERREACH</strong></div>
+              <ul><li>Exact date of birth</li><li>Exact GPA</li><li>Home address</li><li>24-hour reusable proof</li></ul>
+              <small>Data released · 0 fields</small>
+            </article>
+            <div className="firewall-decision"><span>BLOCKED</span><ShieldCheck size={28} /><strong>wallet_evaluate_request</strong><small>read-only · deterministic</small></div>
+            <article className="counterproposal-card">
+              <div><BadgeCheck size={18} /><span>Wallet counterproposal</span><strong>MINIMUM</strong></div>
+              <ul><li>Age over 18</li><li>GPA band</li><li>Eligible residency</li><li>10-minute, one-use proof</li></ul>
+              <small>Still requires visible human consent</small>
+            </article>
+          </div>
+          <div className="firewall-contract"><code>overreach → zero export → safe counterproposal → human consent → one-use proof</code><span>Two sites can negotiate through WebMCP without copying private records into chat.</span></div>
         </section>
 
         <section className="journey-section">

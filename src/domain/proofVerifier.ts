@@ -1,15 +1,24 @@
-import type { DisclosureProof, ProofBundle, VerificationResult } from './proofCourier'
+import type {
+  DisclosureProof,
+  ProofBundle,
+  VerificationResult,
+} from './proofCourier'
+import {
+  SCHOLARSHIP_AUDIENCE,
+  SCHOLARSHIP_PURPOSE,
+  TRUSTED_ISSUER_ID,
+  TRUSTED_ISSUER_KEY_ID,
+  scholarshipRequirements,
+} from './proofPolicy'
 
-export const SCHOLARSHIP_AUDIENCE = 'openbridge-scholarship-2026'
-export const SCHOLARSHIP_PURPOSE = 'Verify minimum eligibility for the Open Web Fellowship.'
+export { SCHOLARSHIP_AUDIENCE, SCHOLARSHIP_PURPOSE, scholarshipRequirements }
 
-export const scholarshipRequirements = [
-  { id: 'age_over_18', label: 'Applicant is at least 18', expectedValue: true, privateAlternative: 'Exact date of birth' },
-  { id: 'active_enrollment', label: 'Currently enrolled', expectedValue: true, privateAlternative: 'Full enrollment record' },
-  { id: 'study_field', label: 'Studies an eligible field', expectedValue: 'computer_science', privateAlternative: 'Complete transcript' },
-  { id: 'gpa_band', label: 'GPA is 3.5 or above', expectedValue: '3.5_or_above', privateAlternative: 'Exact GPA and grades' },
-  { id: 'residency_eligible', label: 'Meets residency rule', expectedValue: true, privateAlternative: 'Home address' },
-] as const
+const trustedIssuerPublicJwk: JsonWebKey = {
+  kty: 'EC',
+  x: 'g5HTb6pGvp61iOTeladCwm8dJeHHUeQ-erw4WiPsQn8',
+  y: 'cYeYkcfmlQ10E9--fHdiTELyQS7vNa2KJq4MqdrngaM',
+  crv: 'P-256',
+}
 
 export function getScholarshipRequest(nonce = 'request-OWF-2026-001') {
   return {
@@ -26,6 +35,22 @@ export async function verifyProofBundle(
   bundle: ProofBundle,
   options: { now: string; usedNonces?: ReadonlySet<string> } = { now: new Date().toISOString() },
 ): Promise<VerificationResult> {
+  try {
+    return await verifyProofBundleUnsafe(bundle, options)
+  } catch {
+    return {
+      accepted: false,
+      code: 'invalid_envelope',
+      summary: 'Proof envelope is malformed and was rejected without changing verifier state.',
+      disclosedClaimIds: [],
+    }
+  }
+}
+
+async function verifyProofBundleUnsafe(
+  bundle: ProofBundle,
+  options: { now: string; usedNonces?: ReadonlySet<string> },
+): Promise<VerificationResult> {
   const claimIds = bundle.disclosures.map((proof) => proof.claim.id)
   const fail = (code: VerificationResult['code'], summary: string): VerificationResult => ({
     accepted: false,
@@ -36,11 +61,26 @@ export async function verifyProofBundle(
 
   if (bundle.audience !== SCHOLARSHIP_AUDIENCE) return fail('wrong_audience', 'Proof is bound to a different verifier.')
   if (bundle.purpose !== SCHOLARSHIP_PURPOSE) return fail('wrong_purpose', 'Proof is bound to a different purpose.')
-  if (Date.parse(options.now) > Date.parse(bundle.expiresAt)) return fail('expired', 'Proof bundle has expired. Ask the person for fresh consent.')
+  if (bundle.issuerId !== TRUSTED_ISSUER_ID || bundle.issuerKeyId !== TRUSTED_ISSUER_KEY_ID) {
+    return fail('invalid_issuer_signature', 'Credential issuer is not in the verifier trust registry.')
+  }
+  const now = Date.parse(options.now)
+  const issuedAt = Date.parse(bundle.issuedAt)
+  const expiresAt = Date.parse(bundle.expiresAt)
+  const credentialIssuedAt = Date.parse(bundle.credential.issuedAt)
+  const credentialValidUntil = Date.parse(bundle.credential.validUntil)
+  const allTimes = [now, issuedAt, expiresAt, credentialIssuedAt, credentialValidUntil]
+  if (allTimes.some((value) => !Number.isFinite(value))) return fail('invalid_timestamps', 'Proof contains a malformed timestamp.')
+  if (issuedAt > now || credentialIssuedAt > now) return fail('invalid_timestamps', 'Proof or credential is not valid yet.')
+  if (expiresAt <= issuedAt || expiresAt - issuedAt > 10 * 60_000) return fail('invalid_timestamps', 'Proof lifetime must be greater than zero and no longer than ten minutes.')
+  if (now > expiresAt || now > credentialValidUntil) return fail('expired', 'Proof or credential has expired. Ask the person for fresh consent.')
   if (options.usedNonces?.has(bundle.nonce)) return fail('replayed', 'This one-time proof nonce has already been used.')
 
   const allowed = new Set([...scholarshipRequirements.map((item) => item.id), 'holder_public_key'])
   if (claimIds.some((id) => !allowed.has(id))) return fail('over_disclosure', 'Proof contains a claim the verifier did not request.')
+  if (new Set(claimIds).size !== claimIds.length) {
+    return fail('over_disclosure', 'Proof must contain each minimum claim exactly once.')
+  }
 
   for (const requirement of scholarshipRequirements) {
     const proof = bundle.disclosures.find((item) => item.claim.id === requirement.id)
@@ -48,7 +88,7 @@ export async function verifyProofBundle(
     if (proof.claim.value !== requirement.expectedValue) return fail('claim_mismatch', `Claim ${requirement.id} does not satisfy the published rule.`)
   }
 
-  const issuerKey = await crypto.subtle.importKey('jwk', bundle.issuerPublicJwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify'])
+  const issuerKey = await crypto.subtle.importKey('jwk', trustedIssuerPublicJwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify'])
   const issuerValid = await crypto.subtle.verify(
     { name: 'ECDSA', hash: 'SHA-256' },
     issuerKey,
@@ -76,13 +116,14 @@ export async function verifyProofBundle(
   )
   const unsigned: Omit<ProofBundle, 'holderSignature'> = {
     version: bundle.version,
+    issuerId: bundle.issuerId,
+    issuerKeyId: bundle.issuerKeyId,
     audience: bundle.audience,
     purpose: bundle.purpose,
     nonce: bundle.nonce,
     issuedAt: bundle.issuedAt,
     expiresAt: bundle.expiresAt,
     credential: bundle.credential,
-    issuerPublicJwk: bundle.issuerPublicJwk,
     issuerSignature: bundle.issuerSignature,
     disclosures: bundle.disclosures,
   }
@@ -113,14 +154,17 @@ export function decodeProofBundle(encoded: string): ProofBundle {
 function signablePresentation(bundle: Omit<ProofBundle, 'holderSignature'>) {
   return JSON.stringify({
     version: bundle.version,
+    issuerId: bundle.issuerId,
+    issuerKeyId: bundle.issuerKeyId,
     audience: bundle.audience,
     purpose: bundle.purpose,
     nonce: bundle.nonce,
     issuedAt: bundle.issuedAt,
     expiresAt: bundle.expiresAt,
-    credentialId: undefined,
+    credential: bundle.credential,
+    issuerSignature: bundle.issuerSignature,
     disclosures: bundle.disclosures,
-  }, (_key, value) => value === undefined ? undefined : value)
+  })
 }
 
 async function rootFromProof(proof: DisclosureProof) {

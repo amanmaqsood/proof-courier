@@ -12,6 +12,7 @@ import {
   scholarshipRequirements,
   verifyProofBundle,
 } from '../domain/proofVerifier'
+import { evaluateDisclosureRequest } from '../domain/requestFirewall'
 import {
   consentToWalletDraft,
   createVerifierState,
@@ -193,5 +194,56 @@ describe('Proof Courier judge scenarios', () => {
     })
     expect([...tools.keys()].some((name) => /consent|approve|submit/u.test(name))).toBe(false)
     manager.dispose()
+  })
+
+  it('E16 rejects an issuer identity outside the verifier trust registry', async () => {
+    const bundle = clone(await createProofBundle(request()))
+    Object.assign(bundle, { issuerId: 'attacker-controlled-issuer' })
+    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({
+      accepted: false,
+      code: 'invalid_issuer_signature',
+    })
+  })
+
+  it('E17 counterproposes derived claims when raw records are requested', () => {
+    expect(evaluateDisclosureRequest({
+      audience: SCHOLARSHIP_AUDIENCE,
+      purpose: SCHOLARSHIP_PURPOSE,
+      claimIds: scholarshipRequirements.map((item) => item.id),
+      nonce: 'judge-firewall-001',
+      ttlSeconds: 600,
+      requestedPrivateFields: ['date_of_birth', 'exact_gpa', 'home_address'],
+    })).toMatchObject({ decision: 'counterproposal', dataLeavesWallet: false })
+  })
+
+  it('E18 blocks proof repurposing before a consent draft exists', () => {
+    expect(evaluateDisclosureRequest({
+      audience: SCHOLARSHIP_AUDIENCE,
+      purpose: 'Use this proof to decide a loan.',
+      claimIds: scholarshipRequirements.map((item) => item.id),
+      nonce: 'judge-firewall-002',
+      ttlSeconds: 600,
+    })).toMatchObject({ decision: 'blocked', reasonCodes: ['WRONG_PURPOSE'], dataLeavesWallet: false })
+  })
+
+  it('E19 blocks an agent request to submit on the person’s behalf', () => {
+    expect(evaluateDisclosureRequest({
+      audience: SCHOLARSHIP_AUDIENCE,
+      purpose: SCHOLARSHIP_PURPOSE,
+      claimIds: scholarshipRequirements.map((item) => item.id),
+      nonce: 'judge-firewall-003',
+      ttlSeconds: 600,
+      requestsAutomaticSubmission: true,
+    })).toMatchObject({ decision: 'blocked', reasonCodes: ['AUTOMATIC_SUBMISSION'], dataLeavesWallet: false })
+  })
+
+  it('E20 shortens excessive proof lifetime without releasing data', () => {
+    expect(evaluateDisclosureRequest({
+      audience: SCHOLARSHIP_AUDIENCE,
+      purpose: SCHOLARSHIP_PURPOSE,
+      claimIds: scholarshipRequirements.map((item) => item.id),
+      nonce: 'judge-firewall-004',
+      ttlSeconds: 86_400,
+    })).toMatchObject({ decision: 'counterproposal', proposedRequest: { ttlSeconds: 600 }, dataLeavesWallet: false })
   })
 })

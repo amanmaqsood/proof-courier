@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { SCHOLARSHIP_AUDIENCE, SCHOLARSHIP_PURPOSE, scholarshipRequirements } from './domain/proofCourier'
+import {
+  createProofBundle,
+  encodeProofBundle,
+  SCHOLARSHIP_AUDIENCE,
+  SCHOLARSHIP_PURPOSE,
+  scholarshipRequirements,
+} from './domain/proofCourier'
 import {
   consentToWalletDraft,
   createVerifierState,
@@ -44,7 +50,7 @@ describe('Proof Courier WebMCP collaboration', () => {
       focusConsent: () => undefined,
     })
 
-    expect([...tools.keys()]).toEqual(['wallet_get_summary', 'wallet_prepare_disclosure', 'wallet_get_disclosure_state'])
+    expect([...tools.keys()]).toEqual(['wallet_get_summary', 'wallet_evaluate_request', 'wallet_prepare_disclosure', 'wallet_get_disclosure_state'])
     expect(tools.has('wallet_export_proof')).toBe(false)
     const summary = await tools.get('wallet_get_summary')!.execute({})
     expect(JSON.stringify(summary)).not.toContain('Maya Rahman')
@@ -139,5 +145,133 @@ describe('Proof Courier WebMCP collaboration', () => {
       expectedVersion: 0,
     })).rejects.toThrow('Wallet changed')
     expect(wallet.version).toBe(1)
+  })
+
+  it('exposes overreach detection as a read-only WebMCP tool before consent', async () => {
+    const tools = installRegistry()
+    let wallet = createWalletState()
+    registerWalletTools({
+      getState: () => wallet,
+      setState: (next) => { wallet = next },
+      focusConsent: () => undefined,
+    })
+
+    const response = await tools.get('wallet_evaluate_request')!.execute({
+      audience: SCHOLARSHIP_AUDIENCE,
+      purpose: SCHOLARSHIP_PURPOSE,
+      claimIds: scholarshipRequirements.map((item) => item.id),
+      nonce: 'firewall-webmcp-001',
+      ttlSeconds: 86_400,
+      requestedPrivateFields: ['date_of_birth', 'exact_gpa'],
+      requestsAutomaticSubmission: false,
+    })
+
+    expect(response).toMatchObject({ data: {
+      decision: 'counterproposal',
+      reasonCodes: ['RAW_PRIVATE_FIELDS', 'NOT_MINIMUM_DISCLOSURE', 'EXCESSIVE_LIFETIME'],
+      dataLeavesWallet: false,
+    } })
+    expect(wallet).toEqual({ version: 1 })
+  })
+
+  it('lets the verifier accept a safe counterproposal without submitting anything', async () => {
+    const tools = installRegistry()
+    let verifier = createVerifierState()
+    registerVerifierTools({
+      getState: () => verifier,
+      setState: (next) => { verifier = next },
+      focusResult: () => undefined,
+    })
+
+    const response = await tools.get('fellowship_evaluate_counterproposal')!.execute({
+      audience: SCHOLARSHIP_AUDIENCE,
+      purpose: SCHOLARSHIP_PURPOSE,
+      claimIds: scholarshipRequirements.map((item) => item.id),
+      nonce: 'firewall-webmcp-002',
+      ttlSeconds: 600,
+      requestedPrivateFields: [],
+      requestsAutomaticSubmission: false,
+    })
+
+    expect(response).toMatchObject({ data: {
+      compatible: true,
+      next: 'Ask the wallet to prepare this exact request for human review.',
+    } })
+    expect(verifier).toEqual({ version: 1, status: 'awaiting_proof', usedNonces: [] })
+  })
+
+  it('consumes a nonce atomically when two verification calls race', async () => {
+    const tools = installRegistry()
+    let verifier = createVerifierState()
+    registerVerifierTools({
+      getState: () => verifier,
+      setState: (next) => { verifier = next },
+      focusResult: () => undefined,
+    })
+    const issuedAt = new Date()
+    const bundle = await createProofBundle({
+      audience: SCHOLARSHIP_AUDIENCE,
+      purpose: SCHOLARSHIP_PURPOSE,
+      claimIds: scholarshipRequirements.map((item) => item.id),
+      nonce: 'concurrent-proof-001',
+      issuedAt: issuedAt.toISOString(),
+      expiresAt: new Date(issuedAt.getTime() + 600_000).toISOString(),
+    })
+    const input = { proofBundle: encodeProofBundle(bundle) }
+
+    const outcomes = await Promise.all([
+      tools.get('fellowship_verify_proof')!.execute(input),
+      tools.get('fellowship_verify_proof')!.execute(input),
+    ]) as Array<{ isError?: boolean }>
+
+    expect(outcomes.filter((item) => item.isError !== true)).toHaveLength(1)
+    expect(outcomes.filter((item) => item.isError === true)).toHaveLength(1)
+    expect(verifier.usedNonces).toEqual(['concurrent-proof-001'])
+  })
+
+  it('returns a structured recoverable denial for malformed proof input', async () => {
+    const tools = installRegistry()
+    let verifier = createVerifierState()
+    registerVerifierTools({
+      getState: () => verifier,
+      setState: (next) => { verifier = next },
+      focusResult: () => undefined,
+    })
+
+    const response = await tools.get('fellowship_verify_proof')!.execute({ proofBundle: 'not-a-proof-bundle' })
+
+    expect(response).toMatchObject({
+      isError: true,
+      data: {
+        code: 'invalid_envelope',
+        recover: 'Ask the wallet for a fresh one-time proof bundle, then retry verification once.',
+      },
+    })
+    expect(verifier).toMatchObject({ status: 'rejected', result: { accepted: false, code: 'invalid_envelope' } })
+  })
+
+  it('returns a structured denial when a decoded proof violates verifier policy', async () => {
+    const tools = installRegistry()
+    let verifier = createVerifierState()
+    registerVerifierTools({
+      getState: () => verifier,
+      setState: (next) => { verifier = next },
+      focusResult: () => undefined,
+    })
+    const issuedAt = new Date()
+    const bundle = await createProofBundle({
+      audience: SCHOLARSHIP_AUDIENCE,
+      purpose: SCHOLARSHIP_PURPOSE,
+      claimIds: scholarshipRequirements.map((item) => item.id),
+      nonce: 'policy-denial-001',
+      issuedAt: issuedAt.toISOString(),
+      expiresAt: new Date(issuedAt.getTime() + 600_000).toISOString(),
+    })
+    Object.assign(bundle, { purpose: 'Use this proof to decide a loan.' })
+
+    const response = await tools.get('fellowship_verify_proof')!.execute({ proofBundle: encodeProofBundle(bundle) })
+
+    expect(response).toMatchObject({ isError: true, data: { code: 'wrong_purpose' } })
+    expect(verifier).toMatchObject({ status: 'rejected', result: { code: 'wrong_purpose' } })
   })
 })

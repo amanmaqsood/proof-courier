@@ -2,9 +2,9 @@
   "suite": "Proof Courier adversarial judge scenarios",
   "command": "npm run eval",
   "success": true,
-  "passed": 15,
+  "passed": 20,
   "failed": 0,
-  "total": 15,
+  "total": 20,
   "scenarios": [
     {
       "id": "E1",
@@ -79,6 +79,31 @@
     {
       "id": "E15",
       "title": "offers no agent consent, approval, or final submission tool",
+      "status": "passed"
+    },
+    {
+      "id": "E16",
+      "title": "rejects an issuer identity outside the verifier trust registry",
+      "status": "passed"
+    },
+    {
+      "id": "E17",
+      "title": "counterproposes derived claims when raw records are requested",
+      "status": "passed"
+    },
+    {
+      "id": "E18",
+      "title": "blocks proof repurposing before a consent draft exists",
+      "status": "passed"
+    },
+    {
+      "id": "E19",
+      "title": "blocks an agent request to submit on the person’s behalf",
+      "status": "passed"
+    },
+    {
+      "id": "E20",
+      "title": "shortens excessive proof lifetime without releasing data",
       "status": "passed"
     }
   ]

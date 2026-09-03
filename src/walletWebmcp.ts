@@ -8,6 +8,7 @@ import {
   type ProofRequest,
   type PublicClaimId,
 } from './domain/proofCourier'
+import { evaluateDisclosureRequest } from './domain/requestFirewall'
 import type { ProofTraceEvent, WalletState } from './proofState'
 import { createDynamicManager, emptySchema, requireVersion, result } from './webmcpRuntime'
 
@@ -24,6 +25,37 @@ export function registerWalletTools(bridge: {
       inputSchema: emptySchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false, untrustedContentHint: true },
       execute: () => result('Private values remain inside the wallet.', { ...getWalletSummary(), version: bridge.getState().version }),
+    },
+    {
+      name: 'wallet_evaluate_request',
+      description: 'Read-only Request Firewall. Checks a proposed verifier request for raw fields, excess claims, unsafe purpose or audience, excessive lifetime, and automatic submission. It releases nothing and returns a minimum-disclosure counterproposal when possible.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          audience: { type: 'string', minLength: 1, maxLength: 120 },
+          purpose: { type: 'string', minLength: 1, maxLength: 240 },
+          claimIds: { type: 'array', items: { type: 'string' }, maxItems: 20, uniqueItems: true },
+          nonce: { type: 'string', minLength: 1, maxLength: 80 },
+          ttlSeconds: { type: 'number', minimum: 1, maximum: 604800 },
+          requestedPrivateFields: { type: 'array', items: { type: 'string' }, maxItems: 20, uniqueItems: true },
+          requestsAutomaticSubmission: { type: 'boolean' },
+        },
+        required: ['audience', 'purpose', 'claimIds', 'nonce', 'ttlSeconds'],
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false, untrustedContentHint: true },
+      execute: (input: Record<string, unknown>) => {
+        const decision = evaluateDisclosureRequest({
+          audience: String(input.audience),
+          purpose: String(input.purpose),
+          claimIds: (input.claimIds as unknown[]).map(String),
+          nonce: String(input.nonce),
+          ttlSeconds: Number(input.ttlSeconds),
+          requestedPrivateFields: ((input.requestedPrivateFields as unknown[] | undefined) ?? []).map(String),
+          requestsAutomaticSubmission: input.requestsAutomaticSubmission === true,
+        })
+        return result(decision.summary, decision)
+      },
     },
     {
       name: 'wallet_prepare_disclosure',
@@ -133,7 +165,7 @@ export function registerWalletTools(bridge: {
     tools,
     () => {
       const status = bridge.getState().draft?.status
-      const base = ['wallet_get_summary', 'wallet_prepare_disclosure', 'wallet_get_disclosure_state']
+      const base = ['wallet_get_summary', 'wallet_evaluate_request', 'wallet_prepare_disclosure', 'wallet_get_disclosure_state']
       if (status === 'consented') return [...base, 'wallet_export_proof']
       if (status === 'exported') return [...base, 'wallet_get_disclosure_receipt']
       return base

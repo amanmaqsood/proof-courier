@@ -73,6 +73,10 @@ export function result(summary: string, data: unknown) {
   return { summary, data }
 }
 
+export function errorResult(summary: string, data: unknown) {
+  return { isError: true as const, summary, data }
+}
+
 export const emptySchema = { type: 'object', properties: {}, additionalProperties: false }
 
 function withTrace(definition: ToolDefinition, recordTrace?: (event: ProofTraceEvent) => void): ToolDefinition {
@@ -81,7 +85,8 @@ function withTrace(definition: ToolDefinition, recordTrace?: (event: ProofTraceE
     execute: async (input) => {
       try {
         const output = await definition.execute(input)
-        recordTrace?.({ toolName: definition.name, status: 'succeeded', summary: traceSummary(output), createdAt: new Date().toISOString() })
+        const blocked = Boolean(output && typeof output === 'object' && 'isError' in output && output.isError === true)
+        recordTrace?.({ toolName: definition.name, status: blocked ? 'blocked' : 'succeeded', summary: traceSummary(output), createdAt: new Date().toISOString() })
         return output
       } catch (error) {
         recordTrace?.({ toolName: definition.name, status: 'blocked', summary: error instanceof Error ? error.message : 'Tool call blocked.', createdAt: new Date().toISOString() })

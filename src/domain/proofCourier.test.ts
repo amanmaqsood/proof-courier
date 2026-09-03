@@ -32,6 +32,12 @@ function clone(bundle: ProofBundle): ProofBundle {
   return structuredClone(bundle)
 }
 
+function toBase64Url(bytes: Uint8Array) {
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/u, '')
+}
+
 describe('Proof Courier disclosure contract', () => {
   it('verifies the minimum purpose-bound claim bundle', async () => {
     const bundle = await createProofBundle(request())
@@ -89,6 +95,19 @@ describe('Proof Courier disclosure contract', () => {
     await expect(verifyProofBundle(bundle, { now: issuedAt, usedNonces: new Set([bundle.nonce]) })).resolves.toMatchObject({ code: 'replayed' })
   })
 
+  it('rejects malformed, future-issued, or overlong proof lifetimes', async () => {
+    const malformed = clone(await createProofBundle(request()))
+    malformed.expiresAt = 'not-a-date'
+    await expect(verifyProofBundle(malformed, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_timestamps' })
+
+    const future = clone(await createProofBundle(request()))
+    future.issuedAt = '2026-09-01T07:00:00.000Z'
+    await expect(verifyProofBundle(future, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_timestamps' })
+
+    const overlong = await createProofBundle(request({ expiresAt: '2026-09-01T07:00:00.000Z' }))
+    await expect(verifyProofBundle(overlong, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_timestamps' })
+  })
+
   it('rejects missing claims and over-disclosure', async () => {
     const missing = clone(await createProofBundle(request()))
     missing.disclosures = missing.disclosures.filter((proof) => proof.claim.id !== 'gpa_band')
@@ -100,6 +119,16 @@ describe('Proof Courier disclosure contract', () => {
       claim: { id: 'subject_ref', value: 'student-7F3A', salt: 'nova-86' },
     })
     await expect(verifyProofBundle(excessive, { now: issuedAt })).resolves.toMatchObject({ code: 'over_disclosure' })
+  })
+
+  it('rejects duplicate disclosures instead of treating them as minimum disclosure', async () => {
+    const bundle = clone(await createProofBundle(request()))
+    bundle.disclosures.push(structuredClone(bundle.disclosures[0]))
+
+    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({
+      accepted: false,
+      code: 'over_disclosure',
+    })
   })
 
   it('rejects an envelope changed after the holder approved it', async () => {
@@ -116,8 +145,52 @@ describe('Proof Courier disclosure contract', () => {
     await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_issuer_signature' })
   })
 
+  it('exports a v2 envelope that identifies—but never supplies—the trusted issuer key', async () => {
+    const bundle = await createProofBundle(request())
+
+    expect(bundle).toMatchObject({
+      version: 2,
+      issuerId: 'openbridge-university-demo-registry',
+      issuerKeyId: 'openbridge-p256-2026-01',
+    })
+    expect(bundle).not.toHaveProperty('issuerPublicJwk')
+  })
+
+  it('rejects a credential re-signed by an untrusted replacement issuer key', async () => {
+    const bundle = clone(await createProofBundle(request()))
+    const attacker = await crypto.subtle.generateKey(
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      true,
+      ['sign', 'verify'],
+    )
+    const attackerPublicJwk = await crypto.subtle.exportKey('jwk', attacker.publicKey)
+    const attackerSignature = await crypto.subtle.sign(
+      { name: 'ECDSA', hash: 'SHA-256' },
+      attacker.privateKey,
+      new TextEncoder().encode(JSON.stringify(bundle.credential)),
+    )
+    bundle.issuerSignature = toBase64Url(new Uint8Array(attackerSignature))
+    Object.assign(bundle, { issuerPublicJwk: attackerPublicJwk })
+
+    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({
+      accepted: false,
+      code: 'invalid_issuer_signature',
+    })
+  })
+
   it('refuses duplicate or non-consent-safe claim requests', async () => {
     await expect(createProofBundle(request({ claimIds: ['age_over_18', 'age_over_18'] }))).rejects.toThrow('Duplicate')
     await expect(createProofBundle(request({ claimIds: ['subject_ref' as never] }))).rejects.toThrow('outside')
+  })
+
+  it('fails closed with a structured result for malformed proof components', async () => {
+    const malformed = clone(await createProofBundle(request()))
+    Object.assign(malformed, { disclosures: null, holderSignature: '*' })
+
+    await expect(verifyProofBundle(malformed, { now: issuedAt })).resolves.toMatchObject({
+      accepted: false,
+      code: 'invalid_envelope',
+      disclosedClaimIds: [],
+    })
   })
 })
