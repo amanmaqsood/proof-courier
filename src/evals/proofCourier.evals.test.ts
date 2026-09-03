@@ -256,4 +256,13 @@ describe('Proof Courier judge scenarios', () => {
       code: 'invalid_consent',
     })
   })
+
+  it('E22 rejects a consent grant dated after verification time', async () => {
+    const bundle = await createProofBundle(request(), '2026-09-01T06:09:00.000Z')
+
+    await expect(verifyProofBundle(bundle, { now: '2026-09-01T06:05:00.000Z' })).resolves.toMatchObject({
+      accepted: false,
+      code: 'invalid_consent',
+    })
+  })
 })

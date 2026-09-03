@@ -6,6 +6,7 @@ import {
   ChevronRight,
   CircleDot,
   ClipboardCheck,
+  Copy,
   ExternalLink,
   Fingerprint,
   KeyRound,
@@ -51,6 +52,7 @@ const releaseChecks = [
   { name: 'lint', command: 'npm run lint' },
   { name: 'unit and contract tests', command: 'npm test' },
   { name: 'judge scenarios', command: 'npm run eval' },
+  { name: 'release-copy consistency', command: 'npm run verify:copy' },
   { name: 'production build', command: 'npm run build' },
   { name: 'wallet/verifier bundle isolation', command: 'npm run verify:bundles' },
   { name: 'browser journeys', command: 'npm run e2e' },
@@ -77,6 +79,7 @@ const publicWalletUrl = import.meta.env.PROD ? 'https://proof-courier-wallet.ver
 const publicVerifierUrl = import.meta.env.PROD ? 'https://proof-courier-verifier.vercel.app/fellowship' : '/fellowship'
 type FirewallScenario = 'safe' | 'overreach' | 'malicious'
 const minimumClaimIds = scholarshipRequirements.map((item) => item.id)
+const judgePrompt = 'Check the fellowship requirements, obtain only the minimum eligibility proof from my wallet, and prepare the application. Stop for my consent and final submission.'
 const firewallScenarios = {
   safe: {
     label: 'Safe minimum',
@@ -114,11 +117,24 @@ function Brand({ context }: { context?: string }) {
 
 function LandingPage() {
   const [scenarioKey, setScenarioKey] = useState<FirewallScenario>('overreach')
+  const [copyStatus, setCopyStatus] = useState('Copy prompt')
   const scenario = firewallScenarios[scenarioKey]
   const firewall = evaluateDisclosureRequest({ ...scenario.request, claimIds: [...scenario.request.claimIds], requestedPrivateFields: 'requestedPrivateFields' in scenario.request ? [...scenario.request.requestedPrivateFields] : [] })
+  const rawFieldCount = 'requestedPrivateFields' in scenario.request ? scenario.request.requestedPrivateFields.length : 0
+  const rawFieldsBlocked = firewall.decision === 'allowed' ? 0 : rawFieldCount
+  const safePlanClaims = firewall.decision === 'blocked' ? 0 : firewall.proposedRequest?.claimIds.length ?? scenario.request.claimIds.length
   const proposedItems = firewall.proposedRequest
     ? ['Age over 18', 'GPA band', 'Eligible residency', '10-minute, one-use proof']
     : []
+
+  async function copyJudgePrompt() {
+    try {
+      await navigator.clipboard.writeText(judgePrompt)
+      setCopyStatus('Copied')
+    } catch {
+      setCopyStatus('Copy unavailable')
+    }
+  }
   return (
     <div className="site-shell landing-shell">
       <header className="site-header">
@@ -136,7 +152,7 @@ function LandingPage() {
               <a className="primary-action" href={publicVerifierUrl} target="_blank">Open verifier <ExternalLink size={15} /></a>
               <a className="secondary-action" href={publicWalletUrl} target="_blank">Open private wallet <ExternalLink size={15} /></a>
             </div>
-            <a className="release-proof-link" href="/evidence"><BadgeCheck size={17} /><span><strong>Release proof passed</strong><small>Native WebMCP · 21/21 attacks · 6/6 browser journeys · 100/100 audit</small></span><ChevronRight size={15} /></a>
+            <a className="release-proof-link" href="/evidence"><BadgeCheck size={17} /><span><strong>Release proof passed</strong><small>Native WebMCP · 22/22 attacks · 6/6 browser journeys · 100/100 audit</small></span><ChevronRight size={15} /></a>
           </div>
 
           <div className="proof-route" aria-label="Private wallet to agent to verifier flow">
@@ -193,12 +209,29 @@ function LandingPage() {
               <small>{firewall.summary}</small>
             </article>
           </div>
+          <div className="privacy-meter" aria-label="Privacy result for selected scenario" data-testid="privacy-meter">
+            <article><strong>{rawFieldCount}</strong><span>raw fields asked</span></article>
+            <article><strong>{rawFieldsBlocked}</strong><span>raw fields blocked</span></article>
+            <article><strong>{safePlanClaims}</strong><span>derived claims in safe plan</span></article>
+            <article><strong>0</strong><span>raw values released</span></article>
+          </div>
+          <details className="scenario-trace">
+            <summary>Inspect the decision trace <ChevronRight size={14} /></summary>
+            <dl>
+              <div><dt>Goal</dt><dd>Prove fellowship eligibility without releasing source records.</dd></div>
+              <div><dt>Tool</dt><dd><code>wallet_evaluate_request</code></dd></div>
+              <div><dt>Safe input</dt><dd>{scenario.request.claimIds.length} claim IDs, {rawFieldCount} raw field names, {scenario.request.ttlSeconds}-second lifetime</dd></div>
+              <div><dt>State</dt><dd><code>NO_REQUEST → {firewall.decision === 'allowed' ? 'SAFE_REQUEST' : firewall.decision === 'counterproposal' ? 'COUNTERPROPOSAL_READY' : 'REQUEST_BLOCKED'}</code></dd></div>
+              <div><dt>Result</dt><dd>{firewall.summary}</dd></div>
+              <div><dt>Recovery</dt><dd>{firewall.decision === 'blocked' ? 'Return to the published verifier policy and start a new request.' : 'Prepare the safe five-claim plan for visible human review.'}</dd></div>
+            </dl>
+          </details>
           <div className="firewall-contract"><code>overreach → zero export → safe counterproposal → human consent → one-use proof</code><span>Two sites can negotiate through WebMCP without copying private records into chat.</span></div>
         </section>
 
         <section className="journey-section">
           <div><p className="section-kicker">Judge prompt</p><h2>One goal. Two sites. One visible consent boundary.</h2></div>
-          <div className="prompt-ticket"><span>Ask ChatGPT</span><p>“Check the fellowship requirements, obtain only the minimum eligibility proof from my wallet, and prepare the application. Stop for my consent and final submission.”</p></div>
+          <div className="prompt-ticket"><div><span>Ask ChatGPT</span><button type="button" data-testid="copy-judge-prompt" onClick={() => void copyJudgePrompt()}><Copy size={14} />{copyStatus}</button></div><p>{judgePrompt}</p><small aria-live="polite">{copyStatus === 'Copied' ? 'Prompt copied to your clipboard.' : ''}</small></div>
           <ol className="journey-steps">
             <li><span>01</span><strong>Read requirements</strong><p>The verifier publishes five allowed claims and prohibits raw source records.</p></li>
             <li><span>02</span><strong>Prepare disclosure</strong><p>The wallet shows the exact audience, purpose, expiry, and derived claims.</p></li>

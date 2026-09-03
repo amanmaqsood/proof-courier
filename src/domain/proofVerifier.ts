@@ -10,6 +10,7 @@ import {
   TRUSTED_ISSUER_KEY_ID,
   scholarshipRequirements,
 } from './proofPolicy'
+import { serializeSignedPresentation } from './proofEnvelope'
 
 export { SCHOLARSHIP_AUDIENCE, SCHOLARSHIP_PURPOSE, scholarshipRequirements }
 
@@ -97,6 +98,7 @@ async function verifyProofBundleUnsafe(
   if (
     bundle.consent.maxUses !== 1
     || consentGrantedAt < issuedAt
+    || consentGrantedAt > now
     || consentGrantedAt > expiresAt
     || !sameClaimSet
   ) {
@@ -147,7 +149,7 @@ async function verifyProofBundleUnsafe(
     { name: 'ECDSA', hash: 'SHA-256' },
     holderKey,
     fromBase64Url(bundle.holderSignature),
-    encode(signablePresentation(unsigned)),
+    encode(serializeSignedPresentation(unsigned)),
   )
   if (!holderValid) return fail('invalid_holder_signature', 'Presentation binding was changed after human consent.')
 
@@ -165,23 +167,6 @@ export function decodeProofBundle(encoded: string): ProofBundle {
   } catch {
     throw new Error('Proof bundle is not valid encoded JSON.')
   }
-}
-
-function signablePresentation(bundle: Omit<ProofBundle, 'holderSignature'>) {
-  return JSON.stringify({
-    version: bundle.version,
-    issuerId: bundle.issuerId,
-    issuerKeyId: bundle.issuerKeyId,
-    audience: bundle.audience,
-    purpose: bundle.purpose,
-    nonce: bundle.nonce,
-    issuedAt: bundle.issuedAt,
-    expiresAt: bundle.expiresAt,
-    consent: bundle.consent,
-    credential: bundle.credential,
-    issuerSignature: bundle.issuerSignature,
-    disclosures: bundle.disclosures,
-  })
 }
 
 async function rootFromProof(proof: DisclosureProof) {

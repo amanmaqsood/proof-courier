@@ -7,6 +7,7 @@ import {
   type ClaimId,
   type PublicClaimId,
 } from './proofPolicy'
+import { serializeSignedPresentation } from './proofEnvelope'
 
 export {
   SCHOLARSHIP_AUDIENCE,
@@ -204,7 +205,7 @@ export async function createProofBundle(
     disclosures: [...requestedProofs, holderKeyProof],
   }
   const holderKey = await crypto.subtle.importKey('jwk', holderPrivateJwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign'])
-  const signature = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, holderKey, encode(signablePresentation(unsigned)))
+  const signature = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, holderKey, encode(serializeSignedPresentation(unsigned)))
   return { ...unsigned, holderSignature: toBase64Url(new Uint8Array(signature)) }
 }
 
@@ -218,23 +219,6 @@ export function decodeProofBundle(encoded: string): ProofBundle {
   } catch {
     throw new Error('Proof bundle is not valid encoded JSON.')
   }
-}
-
-function signablePresentation(bundle: Omit<ProofBundle, 'holderSignature'>) {
-  return JSON.stringify({
-    version: bundle.version,
-    issuerId: bundle.issuerId,
-    issuerKeyId: bundle.issuerKeyId,
-    audience: bundle.audience,
-    purpose: bundle.purpose,
-    nonce: bundle.nonce,
-    issuedAt: bundle.issuedAt,
-    expiresAt: bundle.expiresAt,
-    consent: bundle.consent,
-    credential: bundle.credential,
-    issuerSignature: bundle.issuerSignature,
-    disclosures: bundle.disclosures,
-  })
 }
 
 function encode(value: string) {

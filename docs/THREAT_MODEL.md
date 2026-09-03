@@ -24,6 +24,7 @@ It does not claim production identity security, W3C Verifiable Credential confor
 | Credential metadata forged | Issuer signature check rejects it |
 | Attacker supplies a replacement issuer key | Verifier ignores sender key material and resolves issuer ID/key ID from its own trust registry |
 | Presentation changed after consent | Holder signature check rejects it |
+| Consent grant widened or dated after verification | Exact one-use grant and approval-time checks reject it |
 | Duplicate claim masquerades as minimum disclosure | Exact claim multiset check rejects it |
 | Concurrent proof replay | In-flight nonce lock allows only one verification to complete |
 | Malformed envelope or timestamp | Structured fail-closed result; proof lifetime is capped at ten minutes |

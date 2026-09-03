@@ -42,11 +42,11 @@
 
 ## 2:10–2:35 — adversarial proof
 
-**DO:** Open `/evidence`. Show the 0 → 1 → 0 capability timeline, the native WebMCP receipt, and the 21 of 21 adversarial matrix. Flash request overreach, counterproposal, consent binding, trusted issuer, wrong audience, purpose, expiry, replay, over-disclosure, forgery, mutation, and capability-lifecycle scenarios.
+**DO:** Open `/evidence`. Show the 0 → 1 → 0 capability timeline, the native WebMCP receipt, and the 22 of 22 adversarial matrix. Flash request overreach, counterproposal, consent binding, trusted issuer, wrong audience, purpose, expiry, replay, over-disclosure, forgery, mutation, and capability-lifecycle scenarios.
 
 **SAY:**
 
-> This is tested as a protocol, not staged as a happy path. Twenty adversarial scenarios, six browser journeys, and a native two-tab WebMCP run produce inspectable receipts, with the limits stated beside the proof.
+> This is tested as a protocol, not staged as a happy path. 22 adversarial scenarios, 6 browser journeys, and a native two-tab WebMCP run produce inspectable receipts, with the limits stated beside the proof.
 
 ## 2:35–2:45 — close
 

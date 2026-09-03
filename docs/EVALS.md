@@ -17,7 +17,8 @@ These are supplemental checks, not certifications. The project-owned adversarial
 | --- | --- | --- |
 | Static quality | `npm run lint` | zero ESLint errors |
 | Domain and tool contracts | `npm test` | proof construction, verification, dynamic tools, stale writes |
-| Adversarial judge suite | `npm run eval` | 21 named scenarios in `artifacts/evals/scenario-results.json` |
+| Adversarial judge suite | `npm run eval` | 22 named scenarios in `artifacts/evals/scenario-results.json` |
+| Release-copy consistency | `npm run verify:copy` | public counts match machine receipts |
 | Production compilation | `npm run build` | hashed `dist` assets |
 | Runtime isolation | `npm run verify:bundles` | wallet signing fixtures absent from verifier/main chunks; raw records absent everywhere |
 | Browser journey | `npm run e2e` | six checks covering the two-origin flow, scenario lab, evidence room, rejection recovery, 390px layouts, and automated accessibility |
@@ -47,6 +48,7 @@ The judge suite verifies:
 18. repurposing is blocked before a consent draft exists;
 19. automatic submission requests are blocked;
 20. excessive proof lifetime is reduced to ten minutes without releasing data;
-21. consent cannot be widened after approval.
+21. consent cannot be widened after approval;
+22. consent dated after verification time is rejected.
 
 The browser suite independently proves that two separate origins can complete the full journey, that malformed proof remains recoverable rather than creating a false success state, and that every judge-facing route has no serious or critical axe findings.

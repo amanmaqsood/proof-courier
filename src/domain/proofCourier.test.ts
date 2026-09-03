@@ -169,6 +169,9 @@ describe('Proof Courier disclosure contract', () => {
     const late = clone(await createProofBundle(request(), '2026-09-01T06:02:00.000Z'))
     late.consent.grantedAt = '2026-09-01T06:11:00.000Z'
     await expect(verifyProofBundle(late, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_consent' })
+
+    const future = await createProofBundle(request(), '2026-09-01T06:09:00.000Z')
+    await expect(verifyProofBundle(future, { now: '2026-09-01T06:05:00.000Z' })).resolves.toMatchObject({ code: 'invalid_consent' })
   })
 
   it('rejects a credential re-signed by an untrusted replacement issuer key', async () => {
