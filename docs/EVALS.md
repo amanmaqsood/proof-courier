@@ -17,10 +17,10 @@ These are supplemental checks, not certifications. The project-owned adversarial
 | --- | --- | --- |
 | Static quality | `npm run lint` | zero ESLint errors |
 | Domain and tool contracts | `npm test` | proof construction, verification, dynamic tools, stale writes |
-| Adversarial judge suite | `npm run eval` | 15 named scenarios in `artifacts/evals/scenario-results.json` |
+| Adversarial judge suite | `npm run eval` | 21 named scenarios in `artifacts/evals/scenario-results.json` |
 | Production compilation | `npm run build` | hashed `dist` assets |
 | Runtime isolation | `npm run verify:bundles` | wallet signing fixtures absent from verifier/main chunks; raw records absent everywhere |
-| Browser journey | `npm run e2e` | full two-tab flow, 390px layouts, rejection recovery |
+| Browser journey | `npm run e2e` | six checks covering the two-origin flow, scenario lab, evidence room, rejection recovery, 390px layouts, and automated accessibility |
 | Complete receipt | `npm run verify` | `artifacts/release/verification.json` |
 
 ## Adversarial scenarios
@@ -41,6 +41,12 @@ The judge suite verifies:
 12. duplicate/internal claim request refusal;
 13. export absent before visible human consent;
 14. one-time export withdrawal and safe receipt transition;
-15. absence of agent consent, approval, or submission authority.
+15. absence of agent consent, approval, or submission authority;
+16. rejection of an issuer identity outside the verifier trust registry;
+17. raw-field requests receive a derived-claim counterproposal;
+18. repurposing is blocked before a consent draft exists;
+19. automatic submission requests are blocked;
+20. excessive proof lifetime is reduced to ten minutes without releasing data;
+21. consent cannot be widened after approval.
 
-The browser suite independently proves that two separate page registries can complete the full journey and that malformed proof remains recoverable rather than creating a false success state.
+The browser suite independently proves that two separate origins can complete the full journey, that malformed proof remains recoverable rather than creating a false success state, and that every judge-facing route has no serious or critical axe findings.
