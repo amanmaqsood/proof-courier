@@ -2,8 +2,8 @@
   "suite": "Proof Courier release gate",
   "command": "npm run verify",
   "success": true,
-  "generatedAt": "2026-09-03T18:10:56.160Z",
-  "sourceRevision": "local-working-tree",
+  "generatedAt": "2026-09-03T18:21:00.969Z",
+  "sourceRevision": "b7ca53de5fcced0d79c7f8e117c437aa67d75803",
   "checks": [
     {
       "name": "lint",
@@ -19,7 +19,7 @@
       "name": "judge scenarios",
       "command": "npm run eval",
       "status": "passed",
-      "total": 20
+      "total": 21
     },
     {
       "name": "production build",
@@ -35,39 +35,39 @@
       "name": "browser journeys",
       "command": "npm run e2e",
       "status": "passed",
-      "total": 4
+      "total": 6
     }
   ],
   "buildArtifacts": [
     {
-      "path": "dist/assets/index-B0N6Rm49.css",
-      "bytes": 28092,
-      "sha256": "29dd26dfe47e02c2a7bd5bea81c7e1e7ab2807a290379b4ec673cdeeda0a7741"
+      "path": "dist/assets/index-COlaTSaL.js",
+      "bytes": 247618,
+      "sha256": "a638c3afdef98aa6acb1ba39776362797014b8efcfd860189d56c2a17ee79674"
     },
     {
-      "path": "dist/assets/index-_Ue4idkd.js",
-      "bytes": 244162,
-      "sha256": "af7a72470519424bf73080da8cf30f23a541b41e8eb56ef5dec466697bf69c7a"
+      "path": "dist/assets/index-DDERMw_n.css",
+      "bytes": 28990,
+      "sha256": "5276bddc65eeb66565a9d3064af2ad4412b6f74ca104aee377be4a3aa926cabd"
     },
     {
-      "path": "dist/assets/verifierWebmcp-CTjqcRSC.js",
+      "path": "dist/assets/verifierWebmcp-BVTXlCBy.js",
       "bytes": 5399,
-      "sha256": "9652c9a8f250cf176d4f1ab1862cb712d8b7a6d98078c460fe9de856ea5dd324"
+      "sha256": "9b7781083e6b89ceba01873faf98f2d3dd1624650e5e98859dec104a01f7472c"
     },
     {
-      "path": "dist/assets/walletWebmcp-HAadARr4.js",
-      "bytes": 11648,
-      "sha256": "735ecdc9cfc290f48f62aacbad9a7f8421b1f91a6bd6eff7d7164f72d1aedbc9"
+      "path": "dist/assets/walletWebmcp-DOlFD-3u.js",
+      "bytes": 11761,
+      "sha256": "321be39c64e041ba0a8635cc26c8795768598267bcd535168430cc8de9a78fcb"
     },
     {
-      "path": "dist/assets/webmcpRuntime-DhbX-JfG.js",
-      "bytes": 2910,
-      "sha256": "1a7e9770953427a983a8cdeff883d03f6b5b5803e1f172583151e11c2aad15b3"
+      "path": "dist/assets/webmcpRuntime-BEeBtpA6.js",
+      "bytes": 1339,
+      "sha256": "c756ba197b0425917bdaf0e759cfba730f996b0046b615677902afb716384b33"
     },
     {
       "path": "dist/index.html",
       "bytes": 634,
-      "sha256": "a098421bb4b347c31b0c6e8c751cb4bb6b92e084299d792c0a0be4f3dd85a33e"
+      "sha256": "96a0e8ebda8dfe7407460f0c18fb3e077d4baedc2840f0691292984abe296922"
     }
   ]
 }
