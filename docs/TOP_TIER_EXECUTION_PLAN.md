@@ -161,7 +161,7 @@ Invalid or stale transitions return structured recovery instructions. Tool regis
 - M0 baseline: complete locally. An isolated branch preserves the prior `5363cd8` baseline and its passing release gate.
 - M1 trusted issuer and cryptographic correctness: complete for the prototype scope. Proof Envelope v2 removes sender-supplied trust, binds the entire presentation, rejects duplicate claims and invalid lifetimes, fails closed on malformed envelopes, and serializes concurrent nonce consumption.
 - M2 Request Firewall: complete locally. Both wallet and verifier expose registered read-only negotiation tools; the browser journey proves overreach -> zero export -> counterproposal -> acceptance -> human consent -> one-use proof.
-- M3 origin separation: local proof complete, public deployment pending. Playwright runs wallet and verifier on different origins, proves local-storage separation, and rejects hidden peer-origin resource transport; the deployed two-origin receipt is still required.
+- M3 origin separation: complete for the prototype. Dedicated public wallet and verifier projects return HTTP 200 with security headers; the deployed Playwright journey proves distinct origins, storage isolation, no peer-origin resource transport, and the agent-carried proof as the only bridge.
 - M4 first visual slice: complete locally. The landing page now explains the Request Firewall on desktop and 390px mobile; the full Judge Mode scenario selector remains pending.
 - Current honest state: `TOP-TIER CANDIDATE, NOT YET PUBLIC-FIELD LEADING`. Deployment parity, real native-browser rerun, accessibility/performance evidence, independent review, and the two consecutive benchmark passes remain open.
 

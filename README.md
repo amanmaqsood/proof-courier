@@ -88,12 +88,15 @@ The release gate runs lint, unit and contract tests, 20 named adversarial judge 
 - `artifacts/evals/scenario-results.json`
 - `artifacts/e2e/results.json`
 - `artifacts/release/verification.json`
+- `artifacts/release/production-cross-origin.json` — deployed two-origin journey, storage isolation, and no hidden peer-origin transport
 - `artifacts/release/live-webmcp-verification.json` — one authorized native WebMCP run across the deployed wallet and verifier
 
 Two independent, supplemental checks are also reproducible:
 
 - `npm run eval:webmcp` discovers and directly executes five live page-tool steps with GoogleChromeLabs `webmcp-evals` 0.0.4, without an LLM or API key.
 - `artifacts/evals/third-party/nekuda-wallet-audit.json` is the raw 100/100, zero-finding wallet audit exported from nekuda WebMCP Workbench 1.2.2.
+
+`npm run e2e:production` reruns the canonical journey against the public verifier and wallet origins and writes its own machine receipt.
 
 The main implementation is in:
 

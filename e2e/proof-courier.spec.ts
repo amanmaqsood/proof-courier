@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
+const walletUrl = process.env.PLAYWRIGHT_WALLET_URL ?? 'http://127.0.0.1:4174/wallet'
+
 type BrowserTool = {
   name: string
   execute: (input: Record<string, unknown>) => unknown | Promise<unknown>
@@ -44,7 +46,7 @@ test('human consent unlocks one cross-tab proof and keeps final submission human
   await installWebMcpHarness(wallet)
 
   await fellowship.goto('/fellowship')
-  await wallet.goto('http://127.0.0.1:4174/wallet')
+  await wallet.goto(walletUrl)
 
   expect(new URL(fellowship.url()).origin).not.toBe(new URL(wallet.url()).origin)
   await wallet.evaluate(() => localStorage.setItem('wallet-only-sentinel', 'private-origin'))

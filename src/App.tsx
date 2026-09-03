@@ -24,6 +24,7 @@ import {
 import evalReceipt from '../artifacts/evals/scenario-results.json'
 import nekudaAudit from '../artifacts/evals/third-party/nekuda-wallet-audit.json'
 import webmcpSmoke from '../artifacts/evals/third-party/webmcp-smoke.json'
+import productionCrossOrigin from '../artifacts/release/production-cross-origin.json'
 import {
   SCHOLARSHIP_AUDIENCE,
   SCHOLARSHIP_PURPOSE,
@@ -70,6 +71,7 @@ const nativeEvidence = {
 const nativeReceiptUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/live-webmcp-verification.json'
 const workbenchAuditUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/evals/third-party/nekuda-wallet-audit.json'
 const webmcpSmokeUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/evals/third-party/webmcp-smoke.json'
+const productionCrossOriginUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/production-cross-origin.json'
 const publicWalletUrl = import.meta.env.PROD ? 'https://proof-courier-wallet.vercel.app/wallet' : '/wallet'
 const publicVerifierUrl = import.meta.env.PROD ? 'https://proof-courier-verifier.vercel.app/fellowship' : '/fellowship'
 
@@ -444,6 +446,7 @@ function EvidencePage() {
             <article><span>03 · Exported</span><strong>WITHDRAWN</strong><code>wallet_get_disclosure_receipt</code><p>The export tool disappears and only a safe receipt remains.</p></article>
           </div>
           <div className="live-receipt-line"><BadgeCheck size={18} /><strong>Live receipt confirms:</strong><span>before {String(nativeEvidence.exportBeforeConsent)}</span><span>after consent {String(nativeEvidence.exportAfterConsent)}</span><span>after export {String(nativeEvidence.exportAfterUse)}</span><a href={nativeReceiptUrl} target="_blank">Inspect machine receipt <ExternalLink size={12} /></a></div>
+          <div className="live-receipt-line"><BadgeCheck size={18} /><strong>Deployed origin proof:</strong><span>{productionCrossOrigin.success ? 'passed' : 'review'}</span><span>wallet and verifier storage isolated</span><span>no peer-origin fetches</span><a href={productionCrossOriginUrl} target="_blank">Inspect cross-origin receipt <ExternalLink size={12} /></a></div>
         </section>
 
         <section className="evidence-grid">

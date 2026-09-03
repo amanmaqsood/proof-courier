@@ -1,5 +1,7 @@
 import { defineConfig } from '@playwright/test'
 
+const externalBaseUrl = process.env.PLAYWRIGHT_BASE_URL
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -9,16 +11,16 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [
     ['line'],
-    ['json', { outputFile: 'artifacts/e2e/results.json' }],
+    ['json', { outputFile: process.env.PLAYWRIGHT_RESULTS_FILE ?? 'artifacts/e2e/results.json' }],
     ['html', { outputFolder: 'artifacts/playwright-report', open: 'never' }],
   ],
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: externalBaseUrl ?? 'http://127.0.0.1:4173',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  webServer: [
+  webServer: externalBaseUrl ? undefined : [
     {
       command: 'npm run dev -- --host 127.0.0.1 --port 4173',
       url: 'http://127.0.0.1:4173',
