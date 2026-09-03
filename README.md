@@ -10,6 +10,8 @@ The final application submission remains a human-only button.
 
 **Judge evidence room:** [proof-courier-orcin.vercel.app/evidence](https://proof-courier-orcin.vercel.app/evidence)
 
+**Cross-origin judge path:** [verifier](https://proof-courier-verifier.vercel.app/fellowship) · [private wallet](https://proof-courier-wallet.vercel.app/wallet)
+
 ## Why WebMCP
 
 This is not a chatbot placed beside a form. The verifier and wallet are separate pages with independent, state-aware tool surfaces. The agent must coordinate their live page state:

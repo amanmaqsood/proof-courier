@@ -70,6 +70,8 @@ const nativeEvidence = {
 const nativeReceiptUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/live-webmcp-verification.json'
 const workbenchAuditUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/evals/third-party/nekuda-wallet-audit.json'
 const webmcpSmokeUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/evals/third-party/webmcp-smoke.json'
+const publicWalletUrl = import.meta.env.PROD ? 'https://proof-courier-wallet.vercel.app/wallet' : '/wallet'
+const publicVerifierUrl = import.meta.env.PROD ? 'https://proof-courier-verifier.vercel.app/fellowship' : '/fellowship'
 
 function App() {
   const path = window.location.pathname.replace(/\/+$/u, '') || '/'
@@ -103,8 +105,8 @@ function LandingPage() {
             <h1>The agent carries proof.<br /><em>Not your private records.</em></h1>
             <p className="hero-lede">A fellowship website asks for eligibility. A separate wallet releases five minimum claims only after the person approves the audience, purpose, and expiry.</p>
             <div className="hero-actions">
-              <a className="primary-action" href="/fellowship" target="_blank">Open verifier <ExternalLink size={15} /></a>
-              <a className="secondary-action" href="/wallet" target="_blank">Open private wallet <ExternalLink size={15} /></a>
+              <a className="primary-action" href={publicVerifierUrl} target="_blank">Open verifier <ExternalLink size={15} /></a>
+              <a className="secondary-action" href={publicWalletUrl} target="_blank">Open private wallet <ExternalLink size={15} /></a>
             </div>
             <a className="release-proof-link" href="/evidence"><BadgeCheck size={17} /><span><strong>Release proof passed</strong><small>Native WebMCP · 20/20 attacks · 4/4 browser journeys · 100/100 audit</small></span><ChevronRight size={15} /></a>
           </div>
@@ -290,7 +292,7 @@ function WalletPage() {
           </aside>
         </div>
       </main>
-      <footer><a href="/fellowship" target="_blank">Open fellowship verifier <ExternalLink size={13} /></a><span>Synthetic wallet · private values are illustrative</span></footer>
+      <footer><a href={publicVerifierUrl} target="_blank">Open fellowship verifier <ExternalLink size={13} /></a><span>Synthetic wallet · private values are illustrative</span></footer>
     </div>
   )
 }
@@ -394,7 +396,7 @@ function FellowshipPage() {
           </aside>
         </div>
       </main>
-      <footer><a href="/wallet" target="_blank">Open private wallet <ExternalLink size={13} /></a><span>All people, credentials, and applications are synthetic.</span></footer>
+      <footer><a href={publicWalletUrl} target="_blank">Open private wallet <ExternalLink size={13} /></a><span>All people, credentials, and applications are synthetic.</span></footer>
     </div>
   )
 }
@@ -407,7 +409,7 @@ function EvidencePage() {
     <div className="site-shell evidence-page">
       <header className="site-header">
         <Brand context="Judge evidence room" />
-        <a className="evidence-open-demo" href="/fellowship" target="_blank">Open live flow <ExternalLink size={14} /></a>
+        <a className="evidence-open-demo" href={publicVerifierUrl} target="_blank">Open live flow <ExternalLink size={14} /></a>
       </header>
 
       <main className="evidence-main">
@@ -477,7 +479,7 @@ function EvidencePage() {
           <div className="source-receipt"><span>Exact source and deployment</span><a href={nativeReceiptUrl} target="_blank">Open native WebMCP receipt <ExternalLink size={12} /></a><span>Release artifact hashes</span><a href="https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/verification.json" target="_blank">Open release receipt <ExternalLink size={12} /></a></div>
         </section>
 
-        <section className="evidence-cta"><div><p className="section-kicker">Run the proof</p><h2>Open both sites and watch authority change.</h2></div><div className="hero-actions"><a className="primary-action" href="/fellowship" target="_blank">Open verifier <ExternalLink size={15} /></a><a className="secondary-action" href="/wallet" target="_blank">Open wallet <ExternalLink size={15} /></a></div></section>
+        <section className="evidence-cta"><div><p className="section-kicker">Run the proof</p><h2>Open both sites and watch authority change.</h2></div><div className="hero-actions"><a className="primary-action" href={publicVerifierUrl} target="_blank">Open verifier <ExternalLink size={15} /></a><a className="secondary-action" href={publicWalletUrl} target="_blank">Open wallet <ExternalLink size={15} /></a></div></section>
       </main>
 
       <footer><span>Proof Courier · Evidence room</span><span>Receipts are bundled from the public repository and contain synthetic data only.</span></footer>
