@@ -2,8 +2,8 @@
   "suite": "Proof Courier deployed cross-origin journey",
   "command": "npm run e2e:production",
   "success": true,
-  "generatedAt": "2026-09-03T18:12:11.846Z",
-  "sourceRevision": "b445b0c994ea760b101ce5fbd90a0fefe9d44e27",
+  "generatedAt": "2026-09-03T18:22:54.708Z",
+  "sourceRevision": "e64c680cbdc7ba933d1684c9d070bb2ed40f1031",
   "verifierUrl": "https://proof-courier-verifier.vercel.app/fellowship",
   "walletUrl": "https://proof-courier-wallet.vercel.app/wallet",
   "assertions": [
