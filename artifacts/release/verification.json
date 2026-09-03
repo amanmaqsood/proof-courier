@@ -2,8 +2,8 @@
   "suite": "Proof Courier release gate",
   "command": "npm run verify",
   "success": true,
-  "generatedAt": "2026-09-03T18:21:00.969Z",
-  "sourceRevision": "b7ca53de5fcced0d79c7f8e117c437aa67d75803",
+  "generatedAt": "2026-09-03T18:34:13.448Z",
+  "sourceRevision": "83df13856847cebc5662dde9b1c42ad7d8956ccf",
   "checks": [
     {
       "name": "lint",
@@ -19,7 +19,12 @@
       "name": "judge scenarios",
       "command": "npm run eval",
       "status": "passed",
-      "total": 21
+      "total": 22
+    },
+    {
+      "name": "release-copy consistency",
+      "command": "npm run verify:copy",
+      "status": "passed"
     },
     {
       "name": "production build",
@@ -40,24 +45,24 @@
   ],
   "buildArtifacts": [
     {
-      "path": "dist/assets/index-COlaTSaL.js",
-      "bytes": 247618,
-      "sha256": "a638c3afdef98aa6acb1ba39776362797014b8efcfd860189d56c2a17ee79674"
+      "path": "dist/assets/index-DXXGPZea.css",
+      "bytes": 31075,
+      "sha256": "ca43902399adf3dedf55f94af1718686dd05e5c446ddf81b1db5aa25b0527c3d"
     },
     {
-      "path": "dist/assets/index-DDERMw_n.css",
-      "bytes": 28990,
-      "sha256": "5276bddc65eeb66565a9d3064af2ad4412b6f74ca104aee377be4a3aa926cabd"
+      "path": "dist/assets/index-ox_5ItvM.js",
+      "bytes": 250469,
+      "sha256": "5ac9a0ad921317c8400959dfeb9902b88c298ac89f63df1834d9636c1bc34eec"
     },
     {
-      "path": "dist/assets/verifierWebmcp-BVTXlCBy.js",
+      "path": "dist/assets/verifierWebmcp-CInMUY14.js",
       "bytes": 5399,
-      "sha256": "9b7781083e6b89ceba01873faf98f2d3dd1624650e5e98859dec104a01f7472c"
+      "sha256": "84890e806e269bbed1cb31a923e0e324ea3b00e152d423163dab49f9844b9452"
     },
     {
-      "path": "dist/assets/walletWebmcp-DOlFD-3u.js",
-      "bytes": 11761,
-      "sha256": "321be39c64e041ba0a8635cc26c8795768598267bcd535168430cc8de9a78fcb"
+      "path": "dist/assets/walletWebmcp-BqS87LmL.js",
+      "bytes": 11469,
+      "sha256": "a8f6e23c32d6931b0c518a754375b745f38939d2ddb997d94e79b323b4828a45"
     },
     {
       "path": "dist/assets/webmcpRuntime-BEeBtpA6.js",
@@ -67,7 +72,7 @@
     {
       "path": "dist/index.html",
       "bytes": 634,
-      "sha256": "96a0e8ebda8dfe7407460f0c18fb3e077d4baedc2840f0691292984abe296922"
+      "sha256": "0c9a01793f5f730edc093524b4f0134a93c934013470a8a5f5d85c7c1a217369"
     }
   ]
 }
