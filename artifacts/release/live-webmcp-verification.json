@@ -1,11 +1,11 @@
 {
   "receiptVersion": 2,
-  "capturedAt": "2026-09-03T18:25:47Z",
-  "sourceCommit": "e64c680cbdc7ba933d1684c9d070bb2ed40f1031",
+  "capturedAt": "2026-09-03T18:36:42Z",
+  "sourceCommit": "318a847ea213946d2512bcbe3c96efecf9ad0029",
   "deploymentIds": {
-    "primary": "dpl_9hzoSMMf3h1BhrF8frdrrEPy9LmA",
-    "wallet": "dpl_CCVgE5pVdLt9GV3nM59fXHJJcBXe",
-    "verifier": "dpl_7HpjrzoACkd97LTpwL9Tj7WFvkhG"
+    "primary": "dpl_9BTbd91oeuY1eKPLWTXMQy3CnWwi",
+    "wallet": "dpl_6kkBFBhXjpiJTRYibdEt5AcJBiSB",
+    "verifier": "dpl_CgGZL4VTWthXG83Bn7dwmXC4X1v9"
   },
   "origins": {
     "wallet": "https://proof-courier-wallet.vercel.app",
