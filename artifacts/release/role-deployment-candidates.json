@@ -1,0 +1,80 @@
+{
+  "suite": "Proof Courier protected role deployment candidates",
+  "command": "vercel deploy --prod --skip-domain, followed by authenticated vercel curl checks",
+  "success": true,
+  "generatedAt": "2026-09-04T03:40:16Z",
+  "sourceRevision": "9183e7afd4b19365cfdf8549e877ee1bfadf9413",
+  "canonicalAliasesPromoted": false,
+  "summary": "Three protected no-alias candidates are ready and role-isolated. Canonical submission aliases remain on the prior shared-artifact release.",
+  "roles": [
+    {
+      "role": "wallet",
+      "project": "proof-courier-wallet",
+      "deploymentId": "dpl_7f16BBK3XYskP28Zuotsn4WgBn9x",
+      "url": "https://proof-courier-wallet-qjcf88vi0-apex-stack.vercel.app",
+      "primaryRoute": "/wallet",
+      "entryChunk": "/assets/wallet-DEzR9Vas.js",
+      "checks": [
+        { "path": "/", "status": 307, "location": "/wallet" },
+        { "path": "/wallet", "status": 200 },
+        { "path": "/fellowship", "status": 404 },
+        { "path": "/evidence", "status": 404 },
+        { "path": "/assets/wallet-DEzR9Vas.js", "status": 200 },
+        { "path": "/assets/verifier-_kQB3hyu.js", "status": 404 },
+        { "path": "/assets/showcase-DSDmBp0d.js", "status": 404 }
+      ]
+    },
+    {
+      "role": "verifier",
+      "project": "proof-courier-verifier",
+      "deploymentId": "dpl_6L982WupkHhSQfmrUFj3zD6gQCta",
+      "url": "https://proof-courier-verifier-jeuaz6hbn-apex-stack.vercel.app",
+      "primaryRoute": "/fellowship",
+      "entryChunk": "/assets/verifier-_kQB3hyu.js",
+      "checks": [
+        { "path": "/", "status": 307, "location": "/fellowship" },
+        { "path": "/fellowship", "status": 200 },
+        { "path": "/wallet", "status": 404 },
+        { "path": "/evidence", "status": 404 },
+        { "path": "/assets/verifier-_kQB3hyu.js", "status": 200 },
+        { "path": "/assets/wallet-DEzR9Vas.js", "status": 404 },
+        { "path": "/assets/showcase-DSDmBp0d.js", "status": 404 }
+      ]
+    },
+    {
+      "role": "showcase",
+      "project": "proof-courier",
+      "deploymentId": "dpl_DTo9d7BJTnW1JMHgFSraTVCXrqw5",
+      "url": "https://proof-courier-kublbofn8-apex-stack.vercel.app",
+      "primaryRoute": "/",
+      "entryChunk": "/assets/showcase-DSDmBp0d.js",
+      "checks": [
+        { "path": "/", "status": 200 },
+        { "path": "/evidence", "status": 200 },
+        { "path": "/wallet", "status": 404 },
+        { "path": "/fellowship", "status": 404 },
+        { "path": "/assets/showcase-DSDmBp0d.js", "status": 200 },
+        { "path": "/assets/wallet-DEzR9Vas.js", "status": 404 },
+        { "path": "/assets/verifier-_kQB3hyu.js", "status": 404 }
+      ]
+    }
+  ],
+  "securityHeadersVerifiedForEveryRole": [
+    "content-security-policy",
+    "cross-origin-opener-policy",
+    "permissions-policy",
+    "referrer-policy",
+    "x-content-type-options",
+    "x-frame-options"
+  ],
+  "canonicalAliasObservations": [
+    { "origin": "https://proof-courier-wallet.vercel.app", "ownRouteStatus": 200, "peerRouteStatus": 200 },
+    { "origin": "https://proof-courier-verifier.vercel.app", "ownRouteStatus": 200, "peerRouteStatus": 200 },
+    { "origin": "https://proof-courier-orcin.vercel.app", "ownRouteStatus": 200, "peerRouteStatus": 200 }
+  ],
+  "limitations": [
+    "The candidate URLs are protected and were inspected with authenticated Vercel requests.",
+    "The canonical public aliases were deliberately not promoted during this verification.",
+    "The complete WebMCP browser journey passed against equivalent emitted artifacts locally; a post-promotion native browser rerun is still required."
+  ]
+}

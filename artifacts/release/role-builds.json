@@ -2,7 +2,7 @@
   "suite": "Proof Courier role artifact isolation",
   "command": "npm run verify:roles",
   "success": true,
-  "generatedAt": "2026-09-04T03:36:58.045Z",
+  "generatedAt": "2026-09-04T03:41:42.139Z",
   "assertions": [
     "Each role has an independent HTML entry and role-prefixed assets.",
     "Build-time module graph guards reject forbidden role imports.",

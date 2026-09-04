@@ -159,6 +159,7 @@ Every result below links to a committed machine-readable receipt.
 | Project-run audit with Nekuda WebMCP Workbench tooling | 100/100, 0 findings | [nekuda-wallet-audit.json](artifacts/evals/third-party/nekuda-wallet-audit.json) |
 | Local role-build isolation matrix | 21/21 passed: role routes and owner/peer entry chunks | [role-builds.json](artifacts/release/role-builds.json) |
 | Canonical browser journey against emitted role artifacts | 1/1 passed against emitted role artifacts | [role-browser.json](artifacts/release/role-browser.json) |
+| Protected no-alias Vercel candidates | Passed: role/peer routes, owner/peer chunks, and six security headers | [role-deployment-candidates.json](artifacts/release/role-deployment-candidates.json) |
 | Deployed two-origin journey, storage boundary, and peer-fetch checks | Passed | [production-cross-origin.json](artifacts/release/production-cross-origin.json) |
 | Native WebMCP consent and capability lifecycle | Passed | [live-webmcp-verification.json](artifacts/release/live-webmcp-verification.json) |
 
@@ -268,7 +269,7 @@ The deployed wallet and verifier are separate origins. The browser suite verifie
 
 Both public origins currently serve the same application artifact, including both role routes and lazily loaded role chunks. The legacy build scan proves only that signing fixtures are confined to the wallet-named runtime chunk and that listed raw synthetic record values appear in no production chunk. It does **not** prove role-specific build isolation on the deployed origins: the verifier origin can still serve the wallet route and wallet chunk.
 
-The local release candidate now emits independent wallet, verifier, and showcase artifacts. Its role gate checks the emitted module graphs and content, forbids source maps, serves each artifact on a separate loopback origin, and proves that peer routes and peer entry chunks return 404. Local role builds pass route/chunk isolation, but the public Vercel projects have not been cut over to those artifacts; production role isolation remains unproved until three deployed origins pass the same matrix.
+The local release candidate now emits independent wallet, verifier, and showcase artifacts. Its role gate checks the emitted module graphs and content, forbids source maps, serves each artifact on a separate loopback origin, and proves that peer routes and peer entry chunks return 404. Local role builds pass route/chunk isolation. Protected no-alias Vercel candidates from `9183e7a` also pass their route/chunk and six-header matrices, but the canonical public projects have not been cut over; production role isolation remains unproved until those aliases move and the native browser journey is rerun.
 
 The only intended cross-site application payload is the purpose-bound proof that the agent receives from `wallet_export_proof` and supplies to `fellowship_verify_proof`.
 

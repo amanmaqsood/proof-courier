@@ -2,7 +2,7 @@
   "suite": "Proof Courier release gate",
   "command": "npm run verify",
   "success": true,
-  "generatedAt": "2026-09-04T03:37:12.214Z",
+  "generatedAt": "2026-09-04T03:41:56.765Z",
   "sourceRevision": "local-working-tree",
   "checks": [
     {
