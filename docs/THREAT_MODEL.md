@@ -47,8 +47,8 @@ The synthetic wallet contains an applicant name, date of birth, student ID, exac
 
 ## Known prototype limitations
 
-- All claims and cryptographic fixtures are synthetic. Wallet signing fixtures are client-side because this is a browser prototype. They are confined to the wallet-named runtime chunk, but both origins serve the same application artifact and can serve that chunk.
-- Challenge, replay, and export-grant state are in memory. Reloads, other tabs, processes, or application instances do not share consumption state.
+- All claims and cryptographic fixtures are synthetic. Wallet signing fixtures are client-side because this is a browser prototype. They are confined to the wallet production artifact; the verifier and showcase origins return 404 for the wallet route and wallet entry chunk.
+- Verifier challenge and replay state are in memory, so reloads, other tabs, processes, or application instances do not share verifier consumption state. Wallet export grants use same-origin IndexedDB and are atomically withdrawn across the tested reload and same-origin tab races, but they do not synchronize across devices or browser profiles.
 - There is one verifier-pinned demonstration issuer/key, holder, policy, and audience. The trust registry is a prototype constant, not live PKI.
 - There is no authentication, revocation registry, device binding, backend, secure enclave, or cross-device wallet.
 - A malicious page or compromised browser is outside this prototype's trust boundary.

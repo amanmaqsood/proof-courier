@@ -2,7 +2,7 @@
   "suite": "Proof Courier role artifact isolation",
   "command": "npm run verify:roles",
   "success": true,
-  "generatedAt": "2026-09-04T03:41:42.139Z",
+  "generatedAt": "2026-09-04T03:48:18.213Z",
   "assertions": [
     "Each role has an independent HTML entry and role-prefixed assets.",
     "Build-time module graph guards reject forbidden role imports.",
@@ -111,7 +111,7 @@
     },
     {
       "role": "showcase",
-      "entryFile": "assets/showcase-DSDmBp0d.js",
+      "entryFile": "assets/showcase-CEEMJGOC.js",
       "moduleSources": [
         "index.html"
       ],
@@ -132,12 +132,12 @@
         {
           "path": "dist-roles/showcase/.vite/manifest.json",
           "bytes": 197,
-          "sha256": "642507887906dee8d695e7a2eb348077900e7e38f163f0933bc4fc7365f5d975"
+          "sha256": "ecf51113ab1f8b01709232652036a3b9398355c7d6255d87bf0004cab803f3e7"
         },
         {
-          "path": "dist-roles/showcase/assets/showcase-DSDmBp0d.js",
-          "bytes": 227290,
-          "sha256": "f71c1e7cef4645745024df7cb24a6b4b5440cfa9c317690ebaef297b512a996c"
+          "path": "dist-roles/showcase/assets/showcase-CEEMJGOC.js",
+          "bytes": 227080,
+          "sha256": "9194ee1b0da2d9e39144099bec88e281810c05d1167564f57cc1cc3d6291fbd9"
         },
         {
           "path": "dist-roles/showcase/assets/showcase-index-DXXGPZea.css",
@@ -147,7 +147,7 @@
         {
           "path": "dist-roles/showcase/index.html",
           "bytes": 460,
-          "sha256": "093cc6c261c4c145a4a0e7c502d1a926e8a3d959533f3a0a9b01cf7052f0b658"
+          "sha256": "2af7640acbcb985cbdda645b4690c0820c84c98e701caa45529b85fe764d05bb"
         }
       ]
     }
@@ -281,21 +281,21 @@
     },
     {
       "role": "showcase",
-      "path": "/assets/showcase-DSDmBp0d.js",
+      "path": "/assets/showcase-CEEMJGOC.js",
       "expectedStatus": 200,
       "actualStatus": 200,
       "passed": true
     },
     {
       "role": "wallet",
-      "path": "/assets/showcase-DSDmBp0d.js",
+      "path": "/assets/showcase-CEEMJGOC.js",
       "expectedStatus": 404,
       "actualStatus": 404,
       "passed": true
     },
     {
       "role": "verifier",
-      "path": "/assets/showcase-DSDmBp0d.js",
+      "path": "/assets/showcase-CEEMJGOC.js",
       "expectedStatus": 404,
       "actualStatus": 404,
       "passed": true

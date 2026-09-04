@@ -2,7 +2,7 @@
   "suite": "Proof Courier release gate",
   "command": "npm run verify",
   "success": true,
-  "generatedAt": "2026-09-04T03:41:56.765Z",
+  "generatedAt": "2026-09-04T03:48:32.808Z",
   "sourceRevision": "local-working-tree",
   "checks": [
     {
@@ -57,9 +57,9 @@
   ],
   "buildArtifacts": [
     {
-      "path": "dist/assets/index-B0_AvHK1.js",
-      "bytes": 260104,
-      "sha256": "ba3a9f36ffaa85f65d27eac1a5a66426f0c97cd4fec9fceed55f3059bb40542e"
+      "path": "dist/assets/index-DFcaZ6M5.js",
+      "bytes": 259894,
+      "sha256": "6612a4d084fc4a51971b1d2eb078da8bb2807f11c1e75139a999845808b037b7"
     },
     {
       "path": "dist/assets/index-DXXGPZea.css",
@@ -67,14 +67,14 @@
       "sha256": "ca43902399adf3dedf55f94af1718686dd05e5c446ddf81b1db5aa25b0527c3d"
     },
     {
-      "path": "dist/assets/verifierWebmcp-CKE_GqA4.js",
+      "path": "dist/assets/verifierWebmcp-NdWrzvvN.js",
       "bytes": 14798,
-      "sha256": "aa5de7172d6e9263dbce113b1d082d32b072db7db9ae9845aa719189e1f33bf7"
+      "sha256": "8ebd109c471f18fc997cec4343c97bf9683f3b78e46207b8741af8d712df1aae"
     },
     {
-      "path": "dist/assets/walletWebmcp-BhQHKK5y.js",
+      "path": "dist/assets/walletWebmcp-CvZBArFT.js",
       "bytes": 12784,
-      "sha256": "f85a36f88c354a4db6edb6563ff695f2374376f555ed235d1ceadf553b3b007d"
+      "sha256": "ba34485c7d1f3842a00d241ed4fce4534f4ad4fc0bcb3484282d7f9515625862"
     },
     {
       "path": "dist/assets/webmcpRuntime-CRLWwxlW.js",
@@ -84,7 +84,7 @@
     {
       "path": "dist/index.html",
       "bytes": 634,
-      "sha256": "bfc578563202a8c8a4ec471f338da0fa86c5b152a87fe608ded15c0bca05e5d8"
+      "sha256": "c0fd170e57b7f2ca258f6d192c68876247e184af1ac2810c63f5ccd6cc0f5ab9"
     }
   ]
 }

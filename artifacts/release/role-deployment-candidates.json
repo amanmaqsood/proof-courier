@@ -1,11 +1,11 @@
 {
   "suite": "Proof Courier protected role deployment candidates",
-  "command": "vercel deploy --prod --skip-domain, followed by authenticated vercel curl checks",
+  "command": "vercel promote for each verified candidate, followed by public canonical curl checks",
   "success": true,
-  "generatedAt": "2026-09-04T03:40:16Z",
+  "generatedAt": "2026-09-04T03:45:28Z",
   "sourceRevision": "9183e7afd4b19365cfdf8549e877ee1bfadf9413",
-  "canonicalAliasesPromoted": false,
-  "summary": "Three protected no-alias candidates are ready and role-isolated. Canonical submission aliases remain on the prior shared-artifact release.",
+  "canonicalAliasesPromoted": true,
+  "summary": "Three role-isolated artifacts serve the canonical public aliases. Owning routes return 200 and peer role routes return 404.",
   "roles": [
     {
       "role": "wallet",
@@ -68,13 +68,13 @@
     "x-frame-options"
   ],
   "canonicalAliasObservations": [
-    { "origin": "https://proof-courier-wallet.vercel.app", "ownRouteStatus": 200, "peerRouteStatus": 200 },
-    { "origin": "https://proof-courier-verifier.vercel.app", "ownRouteStatus": 200, "peerRouteStatus": 200 },
-    { "origin": "https://proof-courier-orcin.vercel.app", "ownRouteStatus": 200, "peerRouteStatus": 200 }
+    { "origin": "https://proof-courier-wallet.vercel.app", "ownRouteStatus": 200, "peerRouteStatuses": [404, 404] },
+    { "origin": "https://proof-courier-verifier.vercel.app", "ownRouteStatus": 200, "peerRouteStatuses": [404, 404] },
+    { "origin": "https://proof-courier-orcin.vercel.app", "ownRouteStatus": 200, "peerRouteStatuses": [404, 404] }
   ],
   "limitations": [
-    "The candidate URLs are protected and were inspected with authenticated Vercel requests.",
-    "The canonical public aliases were deliberately not promoted during this verification.",
-    "The complete WebMCP browser journey passed against equivalent emitted artifacts locally; a post-promotion native browser rerun is still required."
+    "The original no-alias candidate URLs were protected and inspected with authenticated Vercel requests before promotion.",
+    "Canonical route and header checks were made over the public internet after promotion.",
+    "The public browser journey passed after promotion; verifier replay state remains limited to one active in-memory verifier session."
   ]
 }

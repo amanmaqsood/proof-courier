@@ -2,10 +2,8 @@
   "suite": "Proof Courier deployed cross-origin journey",
   "command": "npm run e2e:production",
   "success": true,
-  "generatedAt": "2026-09-03T18:35:33.561Z",
-  "wordingClarifiedAt": "2026-09-04T02:29:54Z",
-  "wordingClarification": "The recorded observation is scoped to the tested in-memory browser session; the production journey was not re-run for this wording-only correction.",
-  "sourceRevision": "318a847ea213946d2512bcbe3c96efecf9ad0029",
+  "generatedAt": "2026-09-04T03:45:45.733Z",
+  "sourceRevision": "1767d0c1186242b286326d1920e79ab6c6417f50",
   "verifierUrl": "https://proof-courier-verifier.vercel.app/fellowship",
   "walletUrl": "https://proof-courier-wallet.vercel.app/wallet",
   "assertions": [
@@ -13,7 +11,7 @@
     "Wallet local storage is not visible to the verifier.",
     "Neither page fetches resources from the peer origin.",
     "An overreaching request releases zero data and receives a safe counterproposal.",
-    "Only visible human consent registers the single-call proof export capability in the tested wallet session.",
+    "Only visible human consent registers the single-call export capability in the tested wallet session.",
     "The verifier accepts the agent-carried proof and final submission remains human-only."
   ]
 }

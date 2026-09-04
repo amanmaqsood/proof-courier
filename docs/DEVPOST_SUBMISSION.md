@@ -1,4 +1,4 @@
-# Devpost draft: do not submit
+# Devpost submission copy
 
 ## Project name
 
@@ -10,7 +10,7 @@ The agent carries proof. Not your private records.
 
 ## What it does
 
-Proof Courier is a two-origin, shared-artifact WebMCP prototype for privacy-preserving agent workflows. A fellowship verifier publishes five minimum eligibility claims. If it asks for raw records or keeps proof for too long, the wallet releases nothing and offers a safer counterproposal. The wallet then pauses for visible consent and exposes a proof export tool only after approval. Its versioned grant is persisted in same-origin IndexedDB and atomically claimed across tested reload and two-tab races. ChatGPT can carry the proof between the sites, but it never receives the applicant's date of birth, student ID, exact GPA, transcript, home address, or name. Only the person can submit the application.
+Proof Courier is a WebMCP prototype for privacy-preserving agent workflows. A fellowship verifier publishes five minimum eligibility claims. If it asks for raw records or keeps proof for too long, the wallet releases nothing and offers a safer counterproposal. The wallet then pauses for visible consent and exposes a proof export tool only after approval. Its versioned grant is persisted in same-origin IndexedDB and atomically claimed across tested reload and two-tab races. An agent can carry the proof between the sites, but it never receives the applicant's date of birth, student ID, exact GPA, transcript, home address, or name. Only the person can submit the application.
 
 ## The problem
 
@@ -32,13 +32,13 @@ The synthetic proof bundle uses browser Web Crypto:
 - deterministic policy rejects missing claims and over-disclosure;
 - expiry and consumed challenges reject stale or replayed presentations within the active in-memory verifier session.
 
-The legacy public build lazily loads the wallet and verifier tool surfaces as separate runtime chunks. A new local release-candidate gate produces independent wallet, verifier, and showcase artifacts; rejects forbidden role modules and content; disables source maps; and proves that peer routes and entry chunks return 404 on simulated origins. Local release-candidate builds are role-isolated, but both deployed origins still serve the shared application artifact until the production cutover and rerun are complete.
+The wallet, verifier, and showcase deploy as independent production artifacts. Each canonical origin serves only its own routes and entry chunk. Peer role routes and peer entry chunks return 404. The release gate also rejects forbidden role modules and content, disables source maps, and checks six security headers on every role.
 
 The verifier checks all of these before showing a human submission control.
 
 ## What makes it original
 
-Most agent safety demos add a confirmation dialog before a powerful action. Proof Courier changes both the object and the authority. The agent carries a narrow proof instead of a private record. In the tested browser session, the export capability does not exist before consent and is withdrawn from state after its call. Two WebMCP origins complete the tested journey with separate browser storage and no peer-origin fetches, while still serving one shared application artifact.
+Most agent safety demos add a confirmation dialog before a powerful action. Proof Courier changes both the object and the authority. The agent carries a narrow proof instead of a private record. In the tested browser session, the export capability does not exist before consent and is withdrawn from state after its call. Two WebMCP origins complete the journey with separate browser storage and no peer-origin fetches. Their production artifacts cannot serve each other's role routes or entry chunks.
 
 ## How it was tested
 
@@ -46,7 +46,7 @@ The repository contains 22 named adversarial scenarios covering request overreac
 
 ## Scope and limits
 
-All people, institutions, credentials, and applications are synthetic. Wallet export authority is durable only within same-origin browser storage; verifier challenge and replay state remain in memory and reset across reloads or application instances. The two public origins serve one shared application artifact rather than role-isolated builds. Proof Courier is not a production identity wallet, W3C Verifiable Credential implementation, zero-knowledge proof, compliance product, or real university/fellowship integration. Its submitted claim is the WebMCP interaction pattern and its explicitly tested browser boundaries.
+All people, institutions, credentials, and applications are synthetic. Wallet export authority is durable only within same-origin browser storage. Verifier challenge and replay state remain in memory and reset across reloads or application instances. Proof Courier is not a production identity wallet, W3C Verifiable Credential implementation, zero-knowledge proof, compliance product, or real university or fellowship integration. Its submitted claim is the WebMCP interaction pattern and its explicitly tested browser boundaries.
 
 ## Built with
 
@@ -57,4 +57,4 @@ React, TypeScript, WebMCP (`document.modelContext.registerTool`), Web Crypto, Vi
 - Live app: https://proof-courier-orcin.vercel.app
 - Judge evidence room: https://proof-courier-orcin.vercel.app/evidence
 - Public repository: https://github.com/amanmaqsood/proof-courier
-- Demo video: [pending real ChatGPT recording]
+- Demo video: https://youtu.be/S5y_iFPjlSw

@@ -11,15 +11,15 @@ const roleTotal = roleReceipt.routeChecks.length
 const roleBrowserTotal = roleBrowserReceipt.total
 
 const checks = [
-  ['README.md', [`${scenarioTotal} adversarial scenarios`, `${scenarioTotal} named adversarial judge scenarios`, `${roleTotal}/${roleTotal} passed`, `${roleBrowserTotal}/${roleBrowserTotal} passed against emitted role artifacts`, 'Protected no-alias Vercel candidates from `9183e7a`']],
+  ['README.md', [`${scenarioTotal} adversarial scenarios`, `${scenarioTotal} named adversarial judge scenarios`, `${roleTotal}/${roleTotal} passed`, `${roleBrowserTotal}/${roleBrowserTotal} passed against emitted role artifacts`, 'three independent production artifacts']],
   ['docs/DEVPOST_SUBMISSION.md', [`${scenarioTotal} named adversarial scenarios`, `${browserTotal} Playwright checks`, `${roleTotal} role-isolation outcomes`, `${roleBrowserTotal} isolated-artifact browser journey`]],
   ['docs/EVALS.md', [`${scenarioTotal} named scenarios`, `${roleTotal}/${roleTotal} simulated-origin`, `${roleBrowserTotal}/${roleBrowserTotal}`]],
-  ['src/App.tsx', [`${scenarioTotal}/${scenarioTotal} attacks`, `${browserTotal}/${browserTotal} browser checks`, `${roleTotal}/${roleTotal} route and entry-chunk checks`, `${roleBrowserTotal}/${roleBrowserTotal} isolated-artifact journey`]],
+  ['src/App.tsx', [`${scenarioTotal}/${scenarioTotal} attacks`, `${browserTotal}/${browserTotal} browser checks`, `${roleTotal}/${roleTotal} local route and entry-chunk checks`, `${roleBrowserTotal}/${roleBrowserTotal} isolated-artifact journey`]],
   ['e2e/proof-courier.spec.ts', [`${scenarioTotal}/${scenarioTotal}`, `${browserTotal}/${browserTotal}`]],
-  ['README.md', ['active verifier session', 'Atomic transactions allow one claim across tested reload and cross-tab races', 'does **not** prove role-specific build isolation', 'Local role builds pass route/chunk isolation', 'canonical public projects have not been cut over']],
-  ['docs/DEVPOST_SUBMISSION.md', ['same-origin browser storage', 'verifier challenge and replay state remain in memory', 'shared application artifact', 'Local release-candidate builds are role-isolated']],
-  ['src/App.tsx', ['native receipt predates the IndexedDB wallet wiring', 'Verifier challenge and replay state remain limited to one active in-memory verifier session', 'same application artifact rather than role-isolated builds']],
-  ['artifacts/release/production-cross-origin.json', ['single-call proof export capability in the tested wallet session', 'production journey was not re-run for this wording-only correction']],
+  ['README.md', ['active verifier session', 'Atomic transactions allow one claim across tested reload and cross-tab races', 'canonical production matrix returns 200', 'complete cross-origin consent and proof-delivery journey passed again']],
+  ['docs/DEVPOST_SUBMISSION.md', ['same-origin browser storage', 'Verifier challenge and replay state remain in memory', 'independent production artifacts', 'Peer role routes and peer entry chunks return 404']],
+  ['src/App.tsx', ['native receipt predates the IndexedDB wallet wiring', 'Verifier challenge and replay state remain limited to one active in-memory verifier session', 'independent role-isolated production artifacts']],
+  ['artifacts/release/production-cross-origin.json', ['single-call export capability in the tested wallet session', 'verifier accepts the agent-carried proof and final submission remains human-only']],
 ]
 
 const forbiddenClaims = [
@@ -36,8 +36,8 @@ if (!roleReceipt.success || roleReceipt.roles.length !== 3 || roleReceipt.routeC
 if (!roleBrowserReceipt.success || roleBrowserReceipt.failed !== 0 || roleBrowserTotal !== 1) {
   failures.push('artifacts/release/role-browser.json does not contain the single passing isolated-artifact browser journey')
 }
-if (!roleDeploymentReceipt.success || roleDeploymentReceipt.roles.length !== 3 || roleDeploymentReceipt.canonicalAliasesPromoted !== false) {
-  failures.push('artifacts/release/role-deployment-candidates.json does not contain three passing unpromoted candidates')
+if (!roleDeploymentReceipt.success || roleDeploymentReceipt.roles.length !== 3 || roleDeploymentReceipt.canonicalAliasesPromoted !== true) {
+  failures.push('artifacts/release/role-deployment-candidates.json does not contain three passing promoted production roles')
 }
 for (const [path, expectedFragments] of checks) {
   const body = await readFile(path, 'utf8')

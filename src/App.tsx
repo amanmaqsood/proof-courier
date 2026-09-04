@@ -77,7 +77,7 @@ const nativeEvidence = {
     'All identities, credentials, institutions, claims, and applications are synthetic.',
     'The linked native receipt predates the IndexedDB wallet wiring; rerun it after deployment before treating reload and cross-tab behavior as production evidence.',
     'Verifier challenge and replay state remain limited to one active in-memory verifier session.',
-    'The wallet and verifier use separate origins, but both currently serve the same application artifact rather than role-isolated builds.',
+    'The canonical wallet, verifier, and showcase origins now serve independent role-isolated production artifacts.',
   ],
 } as const
 const nativeReceiptUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/live-webmcp-verification.json'
@@ -673,7 +673,7 @@ export function EvidencePage() {
         <section className="evidence-section release-checks">
           <div className="evidence-section-heading"><div><p className="section-kicker">Release gate</p><h2>Every claim has a corresponding check.</h2></div><p>The first-party gate runs together with <code>npm run verify</code>. Independent Workbench and GoogleChromeLabs probes are supplemental rather than certifications.</p></div>
           <div className="release-check-grid">{releaseChecks.map((check) => <article key={check.name}><BadgeCheck size={18} /><div><strong>{check.name}</strong><code>{check.command}</code></div><span>passed</span></article>)}</div>
-          <div className="live-receipt-line"><BadgeCheck size={18} /><strong>Local role isolation:</strong><span>21/21 route and entry-chunk checks</span><span>1/1 isolated-artifact journey</span><span>production cutover pending</span><a href="https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/role-builds.json" target="_blank">Build receipt <ExternalLink size={12} /></a><a href="https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/role-browser.json" target="_blank">Journey receipt <ExternalLink size={12} /></a></div>
+          <div className="live-receipt-line"><BadgeCheck size={18} /><strong>Role isolation:</strong><span>21/21 local route and entry-chunk checks</span><span>1/1 isolated-artifact journey</span><span>canonical production 200/404 matrix passed</span><a href="https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/role-builds.json" target="_blank">Build receipt <ExternalLink size={12} /></a><a href="https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/role-deployment-candidates.json" target="_blank">Production receipt <ExternalLink size={12} /></a></div>
           <div className="live-receipt-line"><BadgeCheck size={18} /><strong>Independent probes:</strong><span>{webmcpSmoke.passedSteps}/{webmcpSmoke.totalSteps} live tool steps</span><span>{nekudaAudit.score}/100 audit</span><a href={webmcpSmokeUrl} target="_blank">Smoke receipt <ExternalLink size={12} /></a><a href={workbenchAuditUrl} target="_blank">Audit receipt <ExternalLink size={12} /></a></div>
         </section>
 
