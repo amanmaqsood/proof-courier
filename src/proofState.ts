@@ -1,4 +1,4 @@
-import type { ProofBundle, ProofRequest, VerificationResult } from './domain/proofCourier'
+import type { IssuedProofChallenge, ProofBundle, ProofRequest, VerificationResult } from './domain/proofCourier'
 
 export type ProofTraceEvent = {
   toolName: string
@@ -9,13 +9,15 @@ export type ProofTraceEvent = {
 
 export type WalletDisclosureDraft = {
   request: ProofRequest
-  status: 'prepared' | 'consented' | 'exported' | 'revoked'
+  status: 'prepared' | 'consented' | 'exporting' | 'exported' | 'revoked' | 'expired' | 'failed_closed'
   preparedAt: string
   consentedAt?: string
+  exportStartedAt?: string
+  exportOperationId?: string
   exportedAt?: string
+  exportFailedAt?: string
   revokedAt?: string
-  bundle?: ProofBundle
-  encodedBundle?: string
+  expiredAt?: string
 }
 
 export type WalletState = {
@@ -26,6 +28,7 @@ export type WalletState = {
 export type VerifierState = {
   version: number
   status: 'awaiting_proof' | 'verified' | 'rejected' | 'submitted'
+  activeChallenge?: IssuedProofChallenge
   result?: VerificationResult
   proof?: ProofBundle
   usedNonces: string[]
@@ -42,6 +45,7 @@ export function createVerifierState(): VerifierState {
 
 export function consentToWalletDraft(state: WalletState): WalletState {
   if (!state.draft || state.draft.status !== 'prepared') throw new Error('There is no prepared disclosure to approve.')
+  if (isWalletDraftExpired(state)) throw new Error('This disclosure request has expired. Prepare a fresh verifier request before approving.')
   return {
     version: state.version + 1,
     draft: { ...state.draft, status: 'consented', consentedAt: new Date().toISOString() },
@@ -53,6 +57,70 @@ export function revokeWalletDraft(state: WalletState): WalletState {
   return {
     version: state.version + 1,
     draft: { ...state.draft, status: 'revoked', revokedAt: new Date().toISOString() },
+  }
+}
+
+export function claimWalletExport(state: WalletState): WalletState {
+  if (!state.draft || state.draft.status !== 'consented') throw new Error('Export is unavailable until the person approves the visible disclosure card.')
+  if (isWalletDraftExpired(state)) throw new Error('This disclosure request expired before export. Prepare and approve a fresh verifier request.')
+  return {
+    version: state.version + 1,
+    draft: {
+      ...state.draft,
+      status: 'exporting',
+      exportStartedAt: new Date().toISOString(),
+      exportOperationId: crypto.randomUUID(),
+    },
+  }
+}
+
+export function completeWalletExport(
+  state: WalletState,
+  expectedOperationId: string,
+): WalletState {
+  if (
+    !state.draft
+    || state.draft.status !== 'exporting'
+    || state.draft.exportOperationId !== expectedOperationId
+  ) throw new Error('The current session export claim is no longer active.')
+  if (isWalletDraftExpired(state)) throw new Error('This disclosure request expired while the proof was being prepared.')
+  return {
+    version: state.version + 1,
+    draft: {
+      ...state.draft,
+      status: 'exported',
+      exportedAt: new Date().toISOString(),
+    },
+  }
+}
+
+export function failWalletExportClosed(state: WalletState, expectedOperationId: string): WalletState {
+  if (
+    !state.draft
+    || state.draft.status !== 'exporting'
+    || state.draft.exportOperationId !== expectedOperationId
+  ) throw new Error('The current session export claim is no longer active.')
+  return {
+    version: state.version + 1,
+    draft: { ...state.draft, status: 'failed_closed', exportFailedAt: new Date().toISOString() },
+  }
+}
+
+export function isWalletDraftExpired(state: WalletState, now = new Date()) {
+  if (!state.draft) return false
+  const expiresAt = Date.parse(state.draft.request.expiresAt)
+  return !Number.isFinite(expiresAt) || expiresAt <= now.getTime()
+}
+
+export function expireWalletDraft(state: WalletState, now = new Date()): WalletState {
+  if (
+    !state.draft
+    || !['prepared', 'consented'].includes(state.draft.status)
+    || !isWalletDraftExpired(state, now)
+  ) return state
+  return {
+    version: state.version + 1,
+    draft: { ...state.draft, status: 'expired', expiredAt: now.toISOString() },
   }
 }
 

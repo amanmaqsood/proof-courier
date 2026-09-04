@@ -20,7 +20,7 @@ These are supplemental checks, not certifications. The project-owned adversarial
 | Adversarial judge suite | `npm run eval` | 22 named scenarios in `artifacts/evals/scenario-results.json` |
 | Release-copy consistency | `npm run verify:copy` | public counts match machine receipts |
 | Production compilation | `npm run build` | hashed `dist` assets |
-| Runtime isolation | `npm run verify:bundles` | wallet signing fixtures absent from verifier/main chunks; raw records absent everywhere |
+| Production chunk content | `npm run verify:bundles` | signing fixtures confined to the wallet-named chunk; listed raw record values absent from every chunk; does not prove role-specific deployment isolation |
 | Browser journey | `npm run e2e` | six checks covering the two-origin flow, scenario lab, evidence room, rejection recovery, 390px layouts, and automated accessibility |
 | Complete receipt | `npm run verify` | `artifacts/release/verification.json` |
 
@@ -33,7 +33,7 @@ The judge suite verifies:
 3. wrong-audience rejection;
 4. wrong-purpose rejection;
 5. expiry rejection;
-6. nonce replay rejection;
+6. nonce replay rejection within one active verifier session;
 7. missing-claim rejection;
 8. over-disclosure rejection;
 9. changed-claim rejection;
@@ -41,7 +41,7 @@ The judge suite verifies:
 11. post-consent envelope mutation rejection;
 12. duplicate/internal claim request refusal;
 13. export absent before visible human consent;
-14. one-time export withdrawal and safe receipt transition;
+14. atomic export withdrawal and safe receipt transition from a versioned wallet grant;
 15. absence of agent consent, approval, or submission authority;
 16. rejection of an issuer identity outside the verifier trust registry;
 17. raw-field requests receive a derived-claim counterproposal;
@@ -51,4 +51,4 @@ The judge suite verifies:
 21. consent cannot be widened after approval;
 22. consent dated after verification time is rejected.
 
-The browser suite independently proves that two separate origins can complete the full journey, that malformed proof remains recoverable rather than creating a false success state, and that every judge-facing route has no serious or critical axe findings.
+The browser suite independently proves that two separate origins can complete the full journey with separate browser storage and no peer-origin fetches during the tested path, that malformed proof remains recoverable rather than creating a false success state, and that every judge-facing route has no serious or critical axe findings. It also proves same-origin wallet-grant persistence across reload, one atomic claim across two real wallet tabs, and metadata-only cross-tab refresh notification. Because both origins serve the same application artifact and both role chunks, this suite does not claim role-specific build isolation. It does not prove verifier replay consumption across reloads, processes, or application instances, or wallet synchronization across devices or browser profiles.

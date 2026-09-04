@@ -63,7 +63,7 @@ test('human consent unlocks one cross-tab proof and keeps final submission human
   ])
 
   const request = await callTool(fellowship, 'fellowship_get_requirements', {}) as {
-    data: { audience: string; purpose: string; nonce: string; requiredClaims: Array<{ id: string }> }
+    data: { audience: string; purpose: string; nonce: string; expiresAt: string; requiredClaims: Array<{ id: string }> }
   }
   await callTool(wallet, 'wallet_get_summary', {})
   const firewall = await callTool(wallet, 'wallet_evaluate_request', {
@@ -86,6 +86,7 @@ test('human consent unlocks one cross-tab proof and keeps final submission human
     purpose: request.data.purpose,
     claimIds: request.data.requiredClaims.map((item) => item.id),
     nonce: request.data.nonce,
+    challengeExpiresAt: request.data.expiresAt,
     expectedVersion: 1,
   })
 
@@ -93,16 +94,16 @@ test('human consent unlocks one cross-tab proof and keeps final submission human
   await expect(wallet.getByText('ABSENT UNTIL CONSENT', { exact: true })).toBeVisible()
   expect(await toolNames(wallet)).not.toContain('wallet_export_proof')
   await wallet.getByRole('button', { name: 'Approve this disclosure' }).click()
-  await expect(wallet.getByText('One-time export unlocked', { exact: true })).toBeVisible()
-  await expect(wallet.getByText('LIVE FOR ONE CALL', { exact: true })).toBeVisible()
+  await expect(wallet.getByText('One-use export unlocked', { exact: true })).toBeVisible()
+  await expect(wallet.getByText('LIVE FOR ONE DURABLE CLAIM', { exact: true })).toBeVisible()
   await expect.poll(() => toolNames(wallet)).toContain('wallet_export_proof')
 
   const exported = await callTool(wallet, 'wallet_export_proof', { expectedVersion: 3 }) as {
     data: { proofBundle: string; privateFieldsDisclosed: unknown[] }
   }
   expect(exported.data.privateFieldsDisclosed).toEqual([])
-  await expect(wallet.getByText('Minimum proof exported once', { exact: true })).toBeVisible()
-  await expect(wallet.getByText('WITHDRAWN AFTER USE', { exact: true })).toBeVisible()
+  await expect(wallet.getByText('Proof exported', { exact: true })).toBeVisible()
+  await expect(wallet.getByText('WITHDRAWN IN THIS BROWSER WALLET', { exact: true })).toBeVisible()
   await expect.poll(() => toolNames(wallet)).not.toContain('wallet_export_proof')
   await expect.poll(() => toolNames(wallet)).toContain('wallet_get_disclosure_receipt')
 
@@ -123,6 +124,55 @@ test('human consent unlocks one cross-tab proof and keeps final submission human
   await fellowship.getByRole('button', { name: 'Submit verified application' }).click()
   await expect(fellowship.getByRole('heading', { name: 'Human submission complete' })).toBeVisible()
   await expect(fellowship.getByText('Application submitted by the person', { exact: true })).toBeVisible()
+})
+
+test('wallet authority survives reload and is consumed once across two real wallet tabs', async ({ context }) => {
+  const firstWallet = await context.newPage()
+  const secondWallet = await context.newPage()
+  await installWebMcpHarness(firstWallet)
+  await installWebMcpHarness(secondWallet)
+  await Promise.all([firstWallet.goto(walletUrl), secondWallet.goto(walletUrl)])
+
+  await expect.poll(() => toolNames(firstWallet)).toContain('wallet_prepare_disclosure')
+  await expect.poll(() => toolNames(secondWallet)).toContain('wallet_prepare_disclosure')
+  await callTool(firstWallet, 'wallet_prepare_disclosure', {
+    audience: 'openbridge-scholarship-2026',
+    purpose: 'Verify minimum eligibility for the Open Web Fellowship.',
+    claimIds: ['age_over_18', 'active_enrollment', 'study_field', 'gpa_band', 'residency_eligible'],
+    nonce: 'real-wallet-tabs-race',
+    challengeExpiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+    expectedVersion: 1,
+  })
+
+  await expect(secondWallet.getByRole('heading', { name: 'Review five derived claims' })).toBeVisible()
+  await secondWallet.getByRole('button', { name: 'Approve this disclosure' }).click()
+  await expect.poll(() => toolNames(firstWallet)).toContain('wallet_export_proof')
+  await expect.poll(() => toolNames(secondWallet)).toContain('wallet_export_proof')
+
+  const outcomes = await Promise.allSettled([
+    callTool(firstWallet, 'wallet_export_proof', { expectedVersion: 3 }),
+    callTool(secondWallet, 'wallet_export_proof', { expectedVersion: 3 }),
+  ])
+  expect(outcomes.filter((outcome) => outcome.status === 'fulfilled')).toHaveLength(1)
+  expect(outcomes.filter((outcome) => outcome.status === 'rejected')).toHaveLength(1)
+  await expect(firstWallet.getByText('Proof exported', { exact: true })).toBeVisible()
+  await expect(secondWallet.getByText('Proof exported', { exact: true })).toBeVisible()
+  await expect.poll(() => toolNames(firstWallet)).not.toContain('wallet_export_proof')
+  await expect.poll(() => toolNames(secondWallet)).not.toContain('wallet_export_proof')
+
+  await firstWallet.reload()
+  await expect(firstWallet.getByText('Proof exported', { exact: true })).toBeVisible()
+  await expect.poll(() => toolNames(firstWallet)).not.toContain('wallet_export_proof')
+  const stored = await firstWallet.evaluate(async () => {
+    const { IndexedDbWalletGrantStore } = await import('/src/wallet/indexedDbWalletGrantStore.ts')
+    const store = new IndexedDbWalletGrantStore()
+    const state = await store.read()
+    store.close()
+    return state
+  })
+  expect(stored).toMatchObject({ version: 5, draft: { status: 'exported' } })
+  expect(stored.draft).not.toHaveProperty('bundle')
+  expect(stored.draft).not.toHaveProperty('encodedBundle')
 })
 
 test('the landing, wallet, verifier, and evidence room remain usable at 390px', async ({ page }) => {
@@ -181,9 +231,9 @@ test('the public evidence room exposes the complete judge proof without a produc
 
   await expect(page.getByRole('heading', { name: /Trust should be visible/u })).toBeVisible()
   await expect(page.getByText('22/22', { exact: true })).toBeVisible()
-  await expect(page.getByText('6/6', { exact: true })).toBeVisible()
+  await expect(page.getByText('10/10', { exact: true })).toBeVisible()
   await expect(page.getByText('0 → 1 → 0', { exact: true })).toBeVisible()
-  await expect(page.getByText('A capability that lives for exactly one call.', { exact: true })).toBeVisible()
+  await expect(page.getByText('A capability recorded for one call in one browser session.', { exact: true })).toBeVisible()
   await expect(page.getByText('Agent submission capability: absent', { exact: true })).toBeVisible()
   await expect(page.getByText('What this evidence does not claim', { exact: true })).toBeVisible()
 })

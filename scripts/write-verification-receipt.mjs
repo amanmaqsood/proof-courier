@@ -40,8 +40,8 @@ const receipt = {
     { name: 'judge scenarios', command: 'npm run eval', status: evalReceipt.success ? 'passed' : 'failed', total: evalReceipt.total },
     { name: 'release-copy consistency', command: 'npm run verify:copy', status: 'passed' },
     { name: 'production build', command: 'npm run build', status: 'passed' },
-    { name: 'wallet/verifier bundle isolation', command: 'npm run verify:bundles', status: 'passed' },
-    { name: 'browser journeys', command: 'npm run e2e', status: browserResults.stats.unexpected === 0 ? 'passed' : 'failed', total: browserResults.stats.expected },
+    { name: 'production chunk content scan', command: 'npm run verify:bundles', status: 'passed' },
+    { name: 'browser checks', command: 'npm run e2e', status: browserResults.stats.unexpected === 0 ? 'passed' : 'failed', total: browserResults.stats.expected },
   ],
   buildArtifacts,
 }

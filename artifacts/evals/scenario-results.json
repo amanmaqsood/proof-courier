@@ -33,7 +33,7 @@
     },
     {
       "id": "E6",
-      "title": "rejects a replayed one-time nonce",
+      "title": "rejects a challenge replayed in the active verifier session",
       "status": "passed"
     },
     {
@@ -73,7 +73,7 @@
     },
     {
       "id": "E14",
-      "title": "withdraws export after one call and exposes a safe receipt",
+      "title": "withdraws export after one call in the active wallet session and exposes a safe receipt",
       "status": "passed"
     },
     {

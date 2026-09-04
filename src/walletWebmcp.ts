@@ -9,7 +9,16 @@ import {
   type PublicClaimId,
 } from './domain/proofCourier'
 import { evaluateDisclosureRequest } from './domain/requestFirewall'
-import type { ProofTraceEvent, WalletState } from './proofState'
+import {
+  claimWalletExport,
+  completeWalletExport,
+  expireWalletDraft,
+  failWalletExportClosed,
+  isWalletDraftExpired,
+  type ProofTraceEvent,
+  type WalletState,
+} from './proofState'
+import type { WalletGrantStore } from './wallet/walletGrantStore'
 import { createDynamicManager, emptySchema, requireVersion, result } from './webmcpRuntime'
 
 export function registerWalletTools(bridge: {
@@ -17,6 +26,7 @@ export function registerWalletTools(bridge: {
   setState: (state: WalletState) => void
   focusConsent: () => void
   recordTrace?: (event: ProofTraceEvent) => void
+  grantStore?: WalletGrantStore
 }) {
   const tools = [
     {
@@ -66,14 +76,15 @@ export function registerWalletTools(bridge: {
           audience: { type: 'string', enum: [SCHOLARSHIP_AUDIENCE], description: 'Exact verifier audience returned by fellowship_get_requirements.' },
           purpose: { type: 'string', enum: [SCHOLARSHIP_PURPOSE], description: 'Exact purpose returned by fellowship_get_requirements; it binds consent to this eligibility check.' },
           claimIds: { type: 'array', items: { type: 'string', enum: scholarshipRequirements.map((item) => item.id) }, minItems: 5, maxItems: 5, uniqueItems: true, description: 'Exactly the five minimum derived claim identifiers published by the fellowship verifier; never include raw private fields.' },
-          nonce: { type: 'string', minLength: 8, maxLength: 80, description: 'Fresh verifier nonce returned by fellowship_get_requirements; it prevents proof replay.' },
+          nonce: { type: 'string', minLength: 8, maxLength: 80, description: 'Fresh verifier challenge returned by fellowship_get_requirements; the current verifier session rejects unknown or reused values.' },
+          challengeExpiresAt: { type: 'string', format: 'date-time', description: 'Absolute challenge expiry returned by fellowship_get_requirements. The wallet will never extend it.' },
           expectedVersion: { type: 'number', description: 'Current wallet version returned by wallet_get_summary or wallet_get_disclosure_state.' },
         },
-        required: ['audience', 'purpose', 'claimIds', 'nonce', 'expectedVersion'],
+        required: ['audience', 'purpose', 'claimIds', 'nonce', 'challengeExpiresAt', 'expectedVersion'],
         additionalProperties: false,
       },
-      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-      execute: ({ audience, purpose, claimIds, nonce, expectedVersion }: Record<string, unknown>) => {
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
+      execute: async ({ audience, purpose, claimIds, nonce, challengeExpiresAt, expectedVersion }: Record<string, unknown>) => {
         const current = bridge.getState()
         requireVersion(current.version, Number(expectedVersion))
         if (audience !== SCHOLARSHIP_AUDIENCE || purpose !== SCHOLARSHIP_PURPOSE) throw new Error('The request does not match the published fellowship audience and purpose.')
@@ -81,21 +92,29 @@ export function registerWalletTools(bridge: {
         const required = scholarshipRequirements.map((item) => item.id).sort()
         if (JSON.stringify(requested) !== JSON.stringify(required)) throw new Error('Prepare exactly the five published minimum claims—no more and no fewer.')
         const now = new Date()
+        const verifierExpiry = Date.parse(String(challengeExpiresAt))
+        if (!Number.isFinite(verifierExpiry) || verifierExpiry <= now.getTime()) {
+          throw new Error('The verifier challenge expiry is invalid or has already passed. Read fellowship_get_requirements again.')
+        }
+        const walletExpiry = now.getTime() + 10 * 60_000
         const request: ProofRequest = {
           audience: SCHOLARSHIP_AUDIENCE,
           purpose: SCHOLARSHIP_PURPOSE,
           claimIds: claimIds as PublicClaimId[],
           nonce: String(nonce),
           issuedAt: now.toISOString(),
-          expiresAt: new Date(now.getTime() + 10 * 60_000).toISOString(),
+          expiresAt: new Date(Math.min(verifierExpiry, walletExpiry)).toISOString(),
         }
         const next: WalletState = {
           version: current.version + 1,
           draft: { request, status: 'prepared', preparedAt: now.toISOString() },
         }
-        bridge.setState(next)
+        const committed = bridge.grantStore
+          ? await bridge.grantStore.compareAndSet(current.version, next)
+          : next
+        bridge.setState(committed)
         bridge.focusConsent()
-        return result('Five derived claims prepared. Waiting for visible human consent.', safeConsentView(next))
+        return result('Five derived claims prepared. Waiting for visible human consent.', safeConsentView(committed))
       },
     },
     {
@@ -107,41 +126,84 @@ export function registerWalletTools(bridge: {
     },
     {
       name: 'wallet_export_proof',
-      description: 'Exports the one-time purpose-bound proof only after the person approved the exact disclosure in the wallet UI.',
+      description: 'Atomically claims the durable same-origin wallet grant to export a purpose-bound proof only after the person approved the exact disclosure in the wallet UI.',
       inputSchema: {
         type: 'object',
         properties: { expectedVersion: { type: 'number', description: 'Current wallet version returned after the person approved the visible disclosure.' } },
         required: ['expectedVersion'],
         additionalProperties: false,
       },
-      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
       execute: async ({ expectedVersion }: Record<string, unknown>) => {
         const current = bridge.getState()
         requireVersion(current.version, Number(expectedVersion))
-        if (!current.draft || current.draft.status !== 'consented') throw new Error('Export is unavailable until the person approves the visible disclosure card.')
-        const bundle = await createProofBundle(current.draft.request, current.draft.consentedAt)
-        const encodedBundle = encodeProofBundle(bundle)
-        const exportedAt = new Date().toISOString()
-        const next: WalletState = {
-          version: current.version + 1,
-          draft: { ...current.draft, status: 'exported', bundle, encodedBundle, exportedAt },
+        if (isWalletDraftExpired(current)) {
+          const expired = expireWalletDraft(current)
+          if (expired !== current) {
+            const committed = bridge.grantStore
+              ? await bridge.grantStore.compareAndSet(current.version, expired)
+              : expired
+            bridge.setState(committed)
+          }
+          throw new Error('This disclosure request expired before export. Prepare and approve a fresh verifier request.')
         }
-        bridge.setState(next)
-        return result('Purpose-bound proof exported once. Private source values were not included.', {
-          proofBundle: encodedBundle,
-          audience: bundle.audience,
-          purpose: bundle.purpose,
-          nonce: bundle.nonce,
-          expiresAt: bundle.expiresAt,
-          disclosedClaimIds: bundle.disclosures.map((proof) => proof.claim.id).filter((id) => id !== 'holder_public_key'),
-          privateFieldsDisclosed: [],
-          next: 'Open the fellowship verifier tab and call fellowship_verify_proof with this proofBundle.',
-        })
+        const claimed = bridge.grantStore
+          ? await bridge.grantStore.claimExport(current.version)
+          : claimWalletExport(current)
+        const operationId = claimed.draft!.exportOperationId!
+        bridge.setState(claimed)
+
+        try {
+          const bundle = await createProofBundle(claimed.draft!.request, claimed.draft!.consentedAt)
+          const encodedBundle = encodeProofBundle(bundle)
+          const latest = bridge.grantStore
+            ? await bridge.grantStore.read()
+            : bridge.getState()
+          requireVersion(latest.version, claimed.version)
+          if (latest.draft?.exportOperationId !== operationId) {
+            throw new Error('Wallet export authority changed while the proof was being prepared. Start again from the current wallet state.')
+          }
+          const next = completeWalletExport(latest, operationId)
+          const committed = bridge.grantStore
+            ? await bridge.grantStore.compareAndSet(latest.version, next)
+            : next
+          bridge.setState(committed)
+          return result('Purpose-bound proof exported under the atomically claimed wallet grant. Private source values were not included.', {
+            proofBundle: encodedBundle,
+            audience: bundle.audience,
+            purpose: bundle.purpose,
+            nonce: bundle.nonce,
+            expiresAt: bundle.expiresAt,
+            disclosedClaimIds: bundle.disclosures.map((proof) => proof.claim.id).filter((id) => id !== 'holder_public_key'),
+            privateFieldsDisclosed: [],
+            next: 'Open the fellowship verifier tab and call fellowship_verify_proof with this proofBundle.',
+          })
+        } catch (error) {
+          const latest = bridge.grantStore
+            ? await bridge.grantStore.read()
+            : bridge.getState()
+          if (
+            latest.version === claimed.version
+            && latest.draft?.status === 'exporting'
+            && latest.draft.exportOperationId === operationId
+          ) {
+            const failed = failWalletExportClosed(latest, operationId)
+            try {
+              const committed = bridge.grantStore
+                ? await bridge.grantStore.compareAndSet(latest.version, failed)
+                : failed
+              bridge.setState(committed)
+            } catch {
+              // A competing state transition already withdrew or replaced this authority.
+            }
+          }
+          throw error
+        }
       },
     },
     {
       name: 'wallet_get_disclosure_receipt',
-      description: 'Reads the human consent and one-time export receipt without returning the proof token or private values.',
+      description: 'Reads the human consent and current-session export receipt without returning the proof token or private values.',
       inputSchema: emptySchema,
       annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
       execute: () => {
@@ -166,7 +228,7 @@ export function registerWalletTools(bridge: {
     () => {
       const status = bridge.getState().draft?.status
       const base = ['wallet_get_summary', 'wallet_evaluate_request', 'wallet_prepare_disclosure', 'wallet_get_disclosure_state']
-      if (status === 'consented') return [...base, 'wallet_export_proof']
+      if (status === 'consented' && !isWalletDraftExpired(bridge.getState())) return [...base, 'wallet_export_proof']
       if (status === 'exported') return [...base, 'wallet_get_disclosure_receipt']
       return base
     },
@@ -182,7 +244,7 @@ function safeConsentView(state: WalletState) {
     purpose: state.draft?.request.purpose,
     claimIds: state.draft?.request.claimIds ?? [],
     expiresAt: state.draft?.request.expiresAt,
-    exportAvailable: state.draft?.status === 'consented',
+    exportAvailable: state.draft?.status === 'consented' && !isWalletDraftExpired(state),
     privateFieldsDisclosed: [],
     humanActionRequired: state.draft?.status === 'prepared',
   }

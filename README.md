@@ -6,7 +6,7 @@
 
 [Live product](https://proof-courier-orcin.vercel.app) · [2:45 demo](https://youtu.be/S5y_iFPjlSw) · [Judge evidence room](https://proof-courier-orcin.vercel.app/evidence) · [Devpost submission](https://devpost.com/software/proof-courier)
 
-Proof Courier is a two-site WebMCP prototype for minimum, purpose-bound disclosure. A fellowship verifier publishes the five eligibility claims it actually needs. A separate wallet checks that request, rejects unsafe boundaries, negotiates a smaller alternative when possible, and prepares a signed proof. The person sees the exact disclosure and remains the only one who can approve it. Only then does a one-use export tool become available to the browser agent.
+Proof Courier is a two-origin, shared-artifact WebMCP prototype for minimum, purpose-bound disclosure. A fellowship verifier publishes the five eligibility claims it actually needs. A separate wallet page checks that request, rejects unsafe boundaries, negotiates a smaller alternative when possible, and prepares a signed proof. The person sees the exact disclosure and remains the only one who can approve it. Only then does an atomically claimed export tool become available; its authority survives reload and is shared across same-origin wallet tabs without sending wallet state through the notification channel.
 
 The agent carries the proof to the verifier. It never receives the applicant's date of birth, student ID, exact GPA, transcript, or address. Verification can unlock the final application button, but no agent tool can click it.
 
@@ -28,9 +28,9 @@ The agent carries the proof to the verifier. It never receives the applicant's d
 
 3. The agent reads the verifier contract, asks the wallet's Request Firewall to evaluate it, returns the safe request plan to the verifier, and prepares the exact five-claim disclosure.
 4. The wallet stops at a visible consent card. At this point, `wallet_export_proof` is absent.
-5. Click **Approve this disclosure**. The export tool now appears with one authorized use.
-6. Continue the agent. It exports the proof once, passes the bundle to the verifier, and verifies it.
-7. Check both pages: the export tool has been withdrawn, privacy-safe receipts are available, and **Submit verified application** remains a human-only button.
+5. Click **Approve this disclosure**. The export tool now appears for one durable, same-origin wallet grant.
+6. Continue the agent. It exports the proof in that session, passes the bundle to the verifier, and verifies it.
+7. Check both pages: the export tool has been withdrawn from the current in-memory state, privacy-safe receipts are available, and **Submit verified application** remains a human-only button.
 
 The committed native WebMCP receipt records direct capability calls across the two deployed origins. It does not claim that a separate natural-language ChatGPT conversation autonomously selected every step.
 
@@ -56,8 +56,8 @@ sequenceDiagram
     P->>W: Click Approve this disclosure
     W-->>A: wallet_export_proof is now registered
     A->>W: wallet_export_proof(expectedVersion)
-    W-->>A: One-use signed proof bundle
-    Note over W,A: Export tool is withdrawn and a receipt replaces it
+    W-->>A: Session-scoped signed proof bundle
+    Note over W,A: Export tool is withdrawn for this state and a receipt replaces it
     A->>V: fellowship_verify_proof(proofBundle)
     V-->>A: 5 claims verified, 0 private fields received
     V-->>P: Show human-only submit button
@@ -74,7 +74,7 @@ flowchart LR
     P["Prepared<br/>export absent"] -->|Person approves| C["Consented<br/>wallet_export_proof registered"]
     P -->|Person rejects| R["Revoked<br/>export absent"]
     C -->|Person revokes before export| R
-    C -->|One agent call| E["Exported<br/>export withdrawn"]
+    C -->|One call in this session| E["Exported<br/>export withdrawn"]
     E --> Q["Read-only disclosure receipt registered"]
 
     classDef locked fill:#f1f5f9,stroke:#475569,color:#0f172a
@@ -87,11 +87,11 @@ flowchart LR
     class E,Q receipt
 ```
 
-This produces the observable capability sequence `0 -> 1 -> 0`:
+This produces the observable capability sequence `0 -> 1 -> 0` from a versioned authorization grant persisted in same-origin IndexedDB:
 
 - before consent, the export tool does not exist;
-- after the person approves, it exists for one use;
-- after export, it is removed and replaced by a read-only receipt.
+- after the person approves, it exists for one call in that session;
+- after export, it is removed from the current state and replaced by a read-only receipt.
 
 There is deliberately no WebMCP tool that can consent, approve, revoke on the person's behalf, or submit the application.
 
@@ -145,7 +145,7 @@ The browser implementation uses Web Crypto and deterministic policy checks:
 3. A holder P-256 signature binds the issuer signature, audience, purpose, nonce, timestamps, consent scope, and disclosure set.
 4. Exact claim-set checks reject missing claims and over-disclosure.
 5. Audience, purpose, timestamp, envelope, and signature checks reject repurposed or altered bundles.
-6. A used nonce cannot be verified twice within the current verifier session.
+6. `fellowship_get_requirements` issues an unpredictable challenge into the current verifier's in-memory state. Unknown challenges are rejected, and an accepted challenge cannot be verified twice within that active verifier session.
 
 ## Proof, not promises
 
@@ -154,10 +154,10 @@ Every result below links to a committed machine-readable receipt.
 | Check | Recorded result | Evidence |
 | --- | ---: | --- |
 | Adversarial policy and cryptographic matrix | 22/22 passed | [scenario-results.json](artifacts/evals/scenario-results.json) |
-| Canonical browser journeys | 6/6 passed | [verification.json](artifacts/release/verification.json) |
+| Browser checks | 10/10 passed (six product journeys + four durability/concurrency checks) | [verification.json](artifacts/release/verification.json) |
 | Direct live tool smoke with GoogleChromeLabs `webmcp-evals` | 5/5 passed, 0 errors | [webmcp-smoke.json](artifacts/evals/third-party/webmcp-smoke.json) |
 | Project-run audit with Nekuda WebMCP Workbench tooling | 100/100, 0 findings | [nekuda-wallet-audit.json](artifacts/evals/third-party/nekuda-wallet-audit.json) |
-| Deployed two-origin journey and isolation checks | Passed | [production-cross-origin.json](artifacts/release/production-cross-origin.json) |
+| Deployed two-origin journey, storage boundary, and peer-fetch checks | Passed | [production-cross-origin.json](artifacts/release/production-cross-origin.json) |
 | Native WebMCP consent and capability lifecycle | Passed | [live-webmcp-verification.json](artifacts/release/live-webmcp-verification.json) |
 
 The 22 adversarial scenarios cover valid minimum disclosure, private-value exclusion, wrong audience and purpose, expiry, replay, missing and extra claims, issuer and holder tampering, internal-claim requests, unavailable authority, untrusted issuers, raw-record overreach, automatic submission, excessive lifetime, and altered consent grants.
@@ -169,8 +169,8 @@ The full release gate runs:
 - 22 named adversarial judge scenarios;
 - release-copy consistency;
 - the TypeScript and Vite production build;
-- wallet/verifier bundle-isolation checks;
-- six browser journeys, including keyboard operation, narrow viewports, the Request Firewall scenario lab, rejected-proof recovery, and automated serious/critical accessibility scans.
+- production-chunk fixture-placement and raw-value scans;
+- ten browser checks: six product journeys covering keyboard operation, narrow viewports, the Request Firewall scenario lab, rejected-proof recovery, and automated serious/critical accessibility scans, plus four wallet durability and concurrency checks.
 
 The public [evidence room](https://proof-courier-orcin.vercel.app/evidence) turns those receipts into a judge-readable interface.
 
@@ -209,8 +209,8 @@ npm run verify
 | `npm run eval` | 22 adversarial scenarios and a machine-readable receipt |
 | `npm run eval:webmcp` | Five direct live tool steps with GoogleChromeLabs `webmcp-evals` |
 | `npm run build` | TypeScript compilation and production Vite bundles |
-| `npm run verify:bundles` | Wallet and verifier production-chunk isolation |
-| `npm run e2e` | Six local browser journeys across separate origins |
+| `npm run verify:bundles` | Signing-fixture placement and raw-value absence across production chunks |
+| `npm run e2e` | Ten local browser checks: six product journeys plus four wallet durability/concurrency checks |
 | `npm run e2e:production` | Canonical journey against the public wallet and verifier |
 | `npm run verify` | The complete local and CI release gate |
 
@@ -239,7 +239,7 @@ npm run verify
 - `wallet_evaluate_request`: checks a proposed request and returns block, counterproposal, or allow.
 - `wallet_prepare_disclosure`: stages exactly five claims for visible review.
 - `wallet_get_disclosure_state`: reads consent and export availability without changing either.
-- `wallet_export_proof`: appears after human consent and disappears after its single call.
+- `wallet_export_proof`: appears after human consent and disappears after one atomic claim across reloads and same-origin wallet tabs.
 - `wallet_get_disclosure_receipt`: appears after export and never returns the proof token.
 
 The wallet exposes four base tools. Across the lifecycle, either the export tool or the receipt tool joins that base set.
@@ -258,7 +258,9 @@ The verifier exposes four base tools and adds one read-only receipt tool after a
 
 ## Security boundary
 
-The deployed wallet and verifier are separate origins. The browser suite verifies that wallet local storage is not visible to the verifier and that neither page fetches resources from the peer origin. Production headers configure a same-origin opener policy, deny framing, disable camera, microphone, geolocation, payment, and USB access, use no-referrer behavior, and prevent MIME sniffing.
+The deployed wallet and verifier are separate origins. The browser suite verifies that wallet local storage is not visible to the verifier and that neither page fetches resources from the peer origin during the tested journey. Production headers configure a same-origin opener policy, deny framing, disable camera, microphone, geolocation, payment, and USB access, use no-referrer behavior, and prevent MIME sniffing.
+
+Both origins currently serve the same application artifact, including both role routes and lazily loaded role chunks. The build scan proves only that signing fixtures are confined to the wallet-named runtime chunk and that listed raw synthetic record values appear in no production chunk. It does **not** prove role-specific build isolation: the verifier origin can still serve the wallet route and wallet chunk. Separate role builds are a planned Phase 2 gate.
 
 The only intended cross-site application payload is the purpose-bound proof that the agent receives from `wallet_export_proof` and supplies to `fellowship_verify_proof`.
 
@@ -268,7 +270,8 @@ The only intended cross-site application payload is the purpose-bound proof that
 - The demo uses fixed derived-claim, Merkle, and signing fixtures plus masked illustrative fields. It does not derive claims from a real student record.
 - One verifier-pinned demonstration issuer key stands in for production trust infrastructure.
 - The proof format is signed Base64url JSON. It is not encrypted, a W3C Verifiable Credential, a zero-knowledge proof, or a compliance product.
-- The default demonstration nonce is static, and replay memory belongs to the current verifier tab. Reloading the tab resets that memory.
+- The verifier now creates an unpredictable active challenge when `fellowship_get_requirements` runs and rejects caller-chosen, missing, expired, or policy-mismatched challenges. Challenge and replay state still live only in the current verifier's memory; reload, a different tab, or another application instance starts fresh state.
+- The wallet authorization grant is persisted in same-origin IndexedDB. Atomic transactions allow one claim across tested reload and cross-tab races; BroadcastChannel carries only a versioned refresh hint, never wallet state. This does not claim cross-device synchronization.
 - There is no real university connection, fellowship filing, identity assurance, or production key management.
 - The native browser receipt proves direct WebMCP calls and state changes, not autonomous natural-language planning by a separate LLM session.
 

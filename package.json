@@ -15,7 +15,7 @@
     "e2e:production": "PLAYWRIGHT_BASE_URL=https://proof-courier-verifier.vercel.app PLAYWRIGHT_WALLET_URL=https://proof-courier-wallet.vercel.app/wallet PLAYWRIGHT_RESULTS_FILE=artifacts/e2e/production-results.json playwright test e2e/proof-courier.spec.ts -g 'human consent' && node scripts/write-production-receipt.mjs",
     "verify:bundles": "node scripts/verify-bundle-isolation.mjs",
     "verify:copy": "node scripts/verify-release-copy.mjs",
-    "verify": "npm run lint && npm test && npm run eval && npm run verify:copy && npm run build && npm run verify:bundles && npm run e2e && node scripts/write-verification-receipt.mjs",
+    "verify": "npm run lint && npm test && npm run eval && npm run build && npm run verify:bundles && npm run e2e && npm run verify:copy && node scripts/write-verification-receipt.mjs",
     "test:watch": "vitest",
     "lint": "eslint ."
   },

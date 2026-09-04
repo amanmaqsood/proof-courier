@@ -1,5 +1,6 @@
 import type {
   DisclosureProof,
+  IssuedProofChallenge,
   ProofBundle,
   VerificationResult,
 } from './proofCourier'
@@ -13,6 +14,8 @@ import {
 import { serializeSignedPresentation } from './proofEnvelope'
 
 export { SCHOLARSHIP_AUDIENCE, SCHOLARSHIP_PURPOSE, scholarshipRequirements }
+
+const CHALLENGE_LIFETIME_MS = 10 * 60_000
 
 const trustedIssuerPublicJwk: JsonWebKey = {
   kty: 'EC',
@@ -32,9 +35,37 @@ export function getScholarshipRequest(nonce = 'request-OWF-2026-001') {
   }
 }
 
+export function issueScholarshipChallenge(
+  options: { now?: Date; nonce?: string } = {},
+): IssuedProofChallenge {
+  const now = options.now ?? new Date()
+  return {
+    audience: SCHOLARSHIP_AUDIENCE,
+    purpose: SCHOLARSHIP_PURPOSE,
+    nonce: options.nonce ?? `request-${crypto.randomUUID()}`,
+    requiredClaimIds: scholarshipRequirements.map((requirement) => requirement.id),
+    issuedAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + CHALLENGE_LIFETIME_MS).toISOString(),
+  }
+}
+
+export function getIssuedScholarshipRequest(challenge: IssuedProofChallenge) {
+  return {
+    ...getScholarshipRequest(challenge.nonce),
+    issuedAt: challenge.issuedAt,
+    expiresAt: challenge.expiresAt,
+  }
+}
+
+type VerificationOptions = {
+  now: string
+  activeChallenge: IssuedProofChallenge | null
+  usedNonces?: ReadonlySet<string>
+}
+
 export async function verifyProofBundle(
   bundle: ProofBundle,
-  options: { now: string; usedNonces?: ReadonlySet<string> } = { now: new Date().toISOString() },
+  options: VerificationOptions,
 ): Promise<VerificationResult> {
   try {
     return await verifyProofBundleUnsafe(bundle, options)
@@ -50,7 +81,7 @@ export async function verifyProofBundle(
 
 async function verifyProofBundleUnsafe(
   bundle: ProofBundle,
-  options: { now: string; usedNonces?: ReadonlySet<string> },
+  options: VerificationOptions,
 ): Promise<VerificationResult> {
   const claimIds = bundle.disclosures.map((proof) => proof.claim.id)
   const fail = (code: VerificationResult['code'], summary: string): VerificationResult => ({
@@ -75,8 +106,42 @@ async function verifyProofBundleUnsafe(
   if (allTimes.some((value) => !Number.isFinite(value))) return fail('invalid_timestamps', 'Proof contains a malformed timestamp.')
   if (issuedAt > now || credentialIssuedAt > now) return fail('invalid_timestamps', 'Proof or credential is not valid yet.')
   if (expiresAt <= issuedAt || expiresAt - issuedAt > 10 * 60_000) return fail('invalid_timestamps', 'Proof lifetime must be greater than zero and no longer than ten minutes.')
-  if (now > expiresAt || now > credentialValidUntil) return fail('expired', 'Proof or credential has expired. Ask the person for fresh consent.')
-  if (options.usedNonces?.has(bundle.nonce)) return fail('replayed', 'This one-time proof nonce has already been used.')
+  if (now >= expiresAt || now >= credentialValidUntil) return fail('expired', 'Proof or credential has expired. Ask the person for fresh consent.')
+  if (options.usedNonces?.has(bundle.nonce)) return fail('replayed', 'This proof challenge has already been used in the current verifier session.')
+
+  const challenge = options.activeChallenge
+  if (!challenge || challenge.nonce !== bundle.nonce) {
+    return fail('unissued_nonce', 'The proof nonce was not issued by this verifier. Read the current requirements and request a fresh proof.')
+  }
+  const challengeIssuedAt = Date.parse(challenge.issuedAt)
+  const challengeExpiresAt = Date.parse(challenge.expiresAt)
+  const expectedClaimIds = scholarshipRequirements.map((requirement) => requirement.id)
+  const challengeMatchesPolicy = challenge.audience === SCHOLARSHIP_AUDIENCE
+    && challenge.purpose === SCHOLARSHIP_PURPOSE
+    && typeof challenge.nonce === 'string'
+    && challenge.nonce.length >= 8
+    && challenge.nonce.length <= 80
+    && challenge.nonce.trim() === challenge.nonce
+    && sameClaimSet(challenge.requiredClaimIds, expectedClaimIds)
+  if (
+    !Number.isFinite(challengeIssuedAt)
+    || !Number.isFinite(challengeExpiresAt)
+    || challengeExpiresAt <= challengeIssuedAt
+    || challengeExpiresAt - challengeIssuedAt > CHALLENGE_LIFETIME_MS
+    || challengeIssuedAt > now
+    || !challengeMatchesPolicy
+  ) {
+    return fail('invalid_challenge', 'The verifier challenge is malformed or no longer matches the published policy.')
+  }
+  if (now >= challengeExpiresAt) {
+    return fail('expired', 'The verifier challenge has expired. Read the current requirements and request a fresh proof.')
+  }
+  if (issuedAt < challengeIssuedAt || expiresAt > challengeExpiresAt) {
+    return fail('invalid_challenge', 'The proof lifetime is not contained within the issued verifier challenge.')
+  }
+  if (bundle.audience !== challenge.audience || bundle.purpose !== challenge.purpose) {
+    return fail('invalid_challenge', 'The proof does not match the audience and purpose of the issued verifier challenge.')
+  }
 
   const allowed = new Set([...scholarshipRequirements.map((item) => item.id), 'holder_public_key'])
   if (claimIds.some((id) => !allowed.has(id))) return fail('over_disclosure', 'Proof contains a claim the verifier did not request.')
@@ -92,7 +157,7 @@ async function verifyProofBundleUnsafe(
 
   const disclosedPublicClaimIds = claimIds.filter((id) => id !== 'holder_public_key')
   const consentClaimIds = bundle.consent.claimIds
-  const sameClaimSet = new Set(consentClaimIds).size === consentClaimIds.length
+  const sameConsentClaimSet = new Set(consentClaimIds).size === consentClaimIds.length
     && consentClaimIds.length === disclosedPublicClaimIds.length
     && consentClaimIds.every((id) => disclosedPublicClaimIds.includes(id))
   if (
@@ -100,7 +165,7 @@ async function verifyProofBundleUnsafe(
     || consentGrantedAt < issuedAt
     || consentGrantedAt > now
     || consentGrantedAt > expiresAt
-    || !sameClaimSet
+    || !sameConsentClaimSet
   ) {
     return fail('invalid_consent', 'Proof is not bound to one valid human consent grant for the exact disclosed claims.')
   }
@@ -159,6 +224,14 @@ async function verifyProofBundleUnsafe(
     summary: 'Five minimum eligibility claims verified. No private source record was disclosed.',
     disclosedClaimIds: claimIds,
   }
+}
+
+function sameClaimSet(candidate: unknown, expected: readonly string[]) {
+  return Array.isArray(candidate)
+    && candidate.every((claimId) => typeof claimId === 'string')
+    && candidate.length === expected.length
+    && new Set(candidate).size === candidate.length
+    && expected.every((claimId) => candidate.includes(claimId))
 }
 
 export function decodeProofBundle(encoded: string): ProofBundle {

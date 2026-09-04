@@ -3,10 +3,12 @@ import {
   createProofBundle,
   decodeProofBundle,
   encodeProofBundle,
+  type IssuedProofChallenge,
   type ProofBundle,
   type ProofRequest,
 } from '../domain/proofCourier'
 import {
+  issueScholarshipChallenge,
   SCHOLARSHIP_AUDIENCE,
   SCHOLARSHIP_PURPOSE,
   scholarshipRequirements,
@@ -44,6 +46,21 @@ function clone(bundle: ProofBundle): ProofBundle {
   return structuredClone(bundle)
 }
 
+function challenge(overrides: Partial<IssuedProofChallenge> = {}): IssuedProofChallenge {
+  return {
+    ...issueScholarshipChallenge({ now: new Date(issuedAt), nonce: 'judge-eval-nonce-001' }),
+    ...overrides,
+  }
+}
+
+function verificationOptions(
+  now = issuedAt,
+  overrides: Partial<IssuedProofChallenge> = {},
+  usedNonces?: ReadonlySet<string>,
+) {
+  return { now, activeChallenge: challenge(overrides), usedNonces }
+}
+
 function installRegistry() {
   const tools = new Map<string, RegisteredTool>()
   Object.defineProperty(document, 'modelContext', {
@@ -64,7 +81,7 @@ afterEach(() => {
 
 describe('Proof Courier judge scenarios', () => {
   it('E1 accepts one valid minimum-disclosure presentation', async () => {
-    const result = await verifyProofBundle(await createProofBundle(request()), { now: '2026-09-01T06:05:00.000Z' })
+    const result = await verifyProofBundle(await createProofBundle(request()), verificationOptions('2026-09-01T06:05:00.000Z'))
     expect(result).toMatchObject({ accepted: true, code: 'verified' })
   })
 
@@ -80,29 +97,29 @@ describe('Proof Courier judge scenarios', () => {
   it('E3 rejects a presentation sent to a different audience', async () => {
     const bundle = clone(await createProofBundle(request()))
     bundle.audience = 'other-verifier'
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({ accepted: false, code: 'wrong_audience' })
+    await expect(verifyProofBundle(bundle, verificationOptions())).resolves.toMatchObject({ accepted: false, code: 'wrong_audience' })
   })
 
   it('E4 rejects a presentation repurposed after consent', async () => {
     const bundle = clone(await createProofBundle(request()))
     bundle.purpose = 'Decide whether to issue a loan.'
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({ code: 'wrong_purpose' })
+    await expect(verifyProofBundle(bundle, verificationOptions())).resolves.toMatchObject({ code: 'wrong_purpose' })
   })
 
   it('E5 rejects an expired presentation', async () => {
     const bundle = await createProofBundle(request())
-    await expect(verifyProofBundle(bundle, { now: '2026-09-01T06:11:00.000Z' })).resolves.toMatchObject({ code: 'expired' })
+    await expect(verifyProofBundle(bundle, verificationOptions('2026-09-01T06:11:00.000Z'))).resolves.toMatchObject({ code: 'expired' })
   })
 
-  it('E6 rejects a replayed one-time nonce', async () => {
+  it('E6 rejects a challenge replayed in the active verifier session', async () => {
     const bundle = await createProofBundle(request())
-    await expect(verifyProofBundle(bundle, { now: issuedAt, usedNonces: new Set([bundle.nonce]) })).resolves.toMatchObject({ code: 'replayed' })
+    await expect(verifyProofBundle(bundle, verificationOptions(issuedAt, {}, new Set([bundle.nonce])))).resolves.toMatchObject({ code: 'replayed' })
   })
 
   it('E7 rejects a missing required eligibility claim', async () => {
     const bundle = clone(await createProofBundle(request()))
     bundle.disclosures = bundle.disclosures.filter((item) => item.claim.id !== 'gpa_band')
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({ code: 'missing_claim' })
+    await expect(verifyProofBundle(bundle, verificationOptions())).resolves.toMatchObject({ code: 'missing_claim' })
   })
 
   it('E8 rejects a claim the verifier did not request', async () => {
@@ -111,25 +128,25 @@ describe('Proof Courier judge scenarios', () => {
       ...structuredClone(bundle.disclosures[0]),
       claim: { id: 'subject_ref', value: 'student-7F3A', salt: 'nova-86' },
     })
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({ code: 'over_disclosure' })
+    await expect(verifyProofBundle(bundle, verificationOptions())).resolves.toMatchObject({ code: 'over_disclosure' })
   })
 
   it('E9 rejects a derived claim changed after issuer commitment', async () => {
     const bundle = clone(await createProofBundle(request()))
     bundle.disclosures[0].claim.value = false
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({ code: 'claim_mismatch' })
+    await expect(verifyProofBundle(bundle, verificationOptions())).resolves.toMatchObject({ code: 'claim_mismatch' })
   })
 
   it('E10 rejects a forged issuer signature', async () => {
     const bundle = clone(await createProofBundle(request()))
     bundle.issuerSignature = `${bundle.issuerSignature.slice(0, -1)}A`
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_issuer_signature' })
+    await expect(verifyProofBundle(bundle, verificationOptions())).resolves.toMatchObject({ code: 'invalid_issuer_signature' })
   })
 
   it('E11 rejects an envelope changed after holder consent', async () => {
     const bundle = clone(await createProofBundle(request()))
     bundle.nonce = 'mutated-after-consent'
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_holder_signature' })
+    await expect(verifyProofBundle(bundle, verificationOptions(issuedAt, { nonce: bundle.nonce }))).resolves.toMatchObject({ code: 'invalid_holder_signature' })
   })
 
   it('E12 refuses duplicate or internal claim requests', async () => {
@@ -150,6 +167,7 @@ describe('Proof Courier judge scenarios', () => {
       purpose: SCHOLARSHIP_PURPOSE,
       claimIds: scholarshipRequirements.map((item) => item.id),
       nonce: 'judge-consent-001',
+      challengeExpiresAt: new Date(Date.now() + 600_000).toISOString(),
       expectedVersion: 1,
     })
     manager.sync()
@@ -160,7 +178,7 @@ describe('Proof Courier judge scenarios', () => {
     manager.dispose()
   })
 
-  it('E14 withdraws export after one call and exposes a safe receipt', async () => {
+  it('E14 withdraws export after one call in the active wallet session and exposes a safe receipt', async () => {
     const tools = installRegistry()
     let wallet: WalletState = createWalletState()
     const manager = registerWalletTools({
@@ -173,6 +191,7 @@ describe('Proof Courier judge scenarios', () => {
       purpose: SCHOLARSHIP_PURPOSE,
       claimIds: scholarshipRequirements.map((item) => item.id),
       nonce: 'judge-export-001',
+      challengeExpiresAt: new Date(Date.now() + 600_000).toISOString(),
       expectedVersion: 1,
     })
     wallet = consentToWalletDraft(wallet)
@@ -199,7 +218,7 @@ describe('Proof Courier judge scenarios', () => {
   it('E16 rejects an issuer identity outside the verifier trust registry', async () => {
     const bundle = clone(await createProofBundle(request()))
     Object.assign(bundle, { issuerId: 'attacker-controlled-issuer' })
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({
+    await expect(verifyProofBundle(bundle, verificationOptions())).resolves.toMatchObject({
       accepted: false,
       code: 'invalid_issuer_signature',
     })
@@ -251,7 +270,7 @@ describe('Proof Courier judge scenarios', () => {
     const bundle = clone(await createProofBundle(request(), '2026-09-01T06:02:00.000Z'))
     Object.assign(bundle.consent, { maxUses: 2 })
 
-    await expect(verifyProofBundle(bundle, { now: '2026-09-01T06:05:00.000Z' })).resolves.toMatchObject({
+    await expect(verifyProofBundle(bundle, verificationOptions('2026-09-01T06:05:00.000Z'))).resolves.toMatchObject({
       accepted: false,
       code: 'invalid_consent',
     })
@@ -260,7 +279,7 @@ describe('Proof Courier judge scenarios', () => {
   it('E22 rejects a consent grant dated after verification time', async () => {
     const bundle = await createProofBundle(request(), '2026-09-01T06:09:00.000Z')
 
-    await expect(verifyProofBundle(bundle, { now: '2026-09-01T06:05:00.000Z' })).resolves.toMatchObject({
+    await expect(verifyProofBundle(bundle, verificationOptions('2026-09-01T06:05:00.000Z'))).resolves.toMatchObject({
       accepted: false,
       code: 'invalid_consent',
     })

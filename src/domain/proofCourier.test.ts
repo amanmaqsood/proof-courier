@@ -3,10 +3,12 @@ import {
   createProofBundle,
   decodeProofBundle,
   encodeProofBundle,
+  type IssuedProofChallenge,
   type ProofBundle,
   type ProofRequest,
 } from './proofCourier'
 import {
+  issueScholarshipChallenge,
   SCHOLARSHIP_AUDIENCE,
   SCHOLARSHIP_PURPOSE,
   scholarshipRequirements,
@@ -32,6 +34,21 @@ function clone(bundle: ProofBundle): ProofBundle {
   return structuredClone(bundle)
 }
 
+function challenge(overrides: Partial<IssuedProofChallenge> = {}): IssuedProofChallenge {
+  return {
+    ...issueScholarshipChallenge({ now: new Date(issuedAt), nonce: 'proof-request-001' }),
+    ...overrides,
+  }
+}
+
+function verificationOptions(
+  now = issuedAt,
+  overrides: Partial<IssuedProofChallenge> = {},
+  usedNonces?: ReadonlySet<string>,
+) {
+  return { now, activeChallenge: challenge(overrides), usedNonces }
+}
+
 function toBase64Url(bytes: Uint8Array) {
   let binary = ''
   for (const byte of bytes) binary += String.fromCharCode(byte)
@@ -41,7 +58,7 @@ function toBase64Url(bytes: Uint8Array) {
 describe('Proof Courier disclosure contract', () => {
   it('verifies the minimum purpose-bound claim bundle', async () => {
     const bundle = await createProofBundle(request())
-    const result = await verifyProofBundle(bundle, { now: '2026-09-01T06:05:00.000Z' })
+    const result = await verifyProofBundle(bundle, verificationOptions('2026-09-01T06:05:00.000Z'))
 
     expect(result).toMatchObject({ accepted: true, code: 'verified' })
     expect(result.disclosedClaimIds).toEqual([
@@ -52,6 +69,54 @@ describe('Proof Courier disclosure contract', () => {
       'residency_eligible',
       'holder_public_key',
     ])
+  })
+
+  it('rejects a validly signed proof whose nonce this verifier never issued', async () => {
+    const bundle = await createProofBundle(request({ nonce: 'attacker-chosen-nonce' }))
+
+    await expect(verifyProofBundle(bundle, verificationOptions('2026-09-01T06:05:00.000Z'))).resolves.toMatchObject({
+      accepted: false,
+      code: 'unissued_nonce',
+    })
+  })
+
+  it('rejects verification when no active verifier challenge exists', async () => {
+    const bundle = await createProofBundle(request())
+
+    await expect(verifyProofBundle(bundle, {
+      now: '2026-09-01T06:05:00.000Z',
+      activeChallenge: null,
+    })).resolves.toMatchObject({ accepted: false, code: 'unissued_nonce' })
+  })
+
+  it('rejects an expired or policy-mismatched verifier challenge', async () => {
+    const bundle = await createProofBundle(request())
+    const expired = challenge({ expiresAt: '2026-09-01T06:04:00.000Z' })
+    await expect(verifyProofBundle(bundle, {
+      now: '2026-09-01T06:05:00.000Z',
+      activeChallenge: expired,
+    })).resolves.toMatchObject({ accepted: false, code: 'expired' })
+
+    const mismatched = challenge({ requiredClaimIds: scholarshipRequirements.slice(0, -1).map((item) => item.id) })
+    await expect(verifyProofBundle(bundle, {
+      now: '2026-09-01T06:05:00.000Z',
+      activeChallenge: mismatched,
+    })).resolves.toMatchObject({ accepted: false, code: 'invalid_challenge' })
+
+    const overlong = challenge({ expiresAt: '2026-09-01T07:00:00.000Z' })
+    await expect(verifyProofBundle(bundle, {
+      now: '2026-09-01T06:05:00.000Z',
+      activeChallenge: overlong,
+    })).resolves.toMatchObject({ accepted: false, code: 'invalid_challenge' })
+  })
+
+  it('rejects a proof whose lifetime extends beyond its verifier challenge', async () => {
+    const bundle = await createProofBundle(request())
+
+    await expect(verifyProofBundle(bundle, verificationOptions(
+      '2026-09-01T06:01:00.000Z',
+      { expiresAt: '2026-09-01T06:05:00.000Z' },
+    ))).resolves.toMatchObject({ accepted: false, code: 'invalid_challenge' })
   })
 
   it('keeps private source values outside the exported bundle', async () => {
@@ -68,7 +133,7 @@ describe('Proof Courier disclosure contract', () => {
     const bundle = clone(await createProofBundle(request()))
     bundle.disclosures[0].claim.value = false
 
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({
+    await expect(verifyProofBundle(bundle, verificationOptions())).resolves.toMatchObject({
       accepted: false,
       code: 'claim_mismatch',
     })
@@ -78,54 +143,55 @@ describe('Proof Courier disclosure contract', () => {
     const bundle = clone(await createProofBundle(request()))
     bundle.audience = 'different-verifier'
 
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({ code: 'wrong_audience' })
+    await expect(verifyProofBundle(bundle, verificationOptions())).resolves.toMatchObject({ code: 'wrong_audience' })
   })
 
   it('rejects a proof repurposed after consent', async () => {
     const bundle = clone(await createProofBundle(request()))
     bundle.purpose = 'Verify eligibility for a loan.'
 
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({ code: 'wrong_purpose' })
+    await expect(verifyProofBundle(bundle, verificationOptions())).resolves.toMatchObject({ code: 'wrong_purpose' })
   })
 
   it('rejects expiry and one-time nonce replay', async () => {
     const bundle = await createProofBundle(request())
 
-    await expect(verifyProofBundle(bundle, { now: '2026-09-01T06:11:00.000Z' })).resolves.toMatchObject({ code: 'expired' })
-    await expect(verifyProofBundle(bundle, { now: issuedAt, usedNonces: new Set([bundle.nonce]) })).resolves.toMatchObject({ code: 'replayed' })
+    await expect(verifyProofBundle(bundle, verificationOptions(expiresAt))).resolves.toMatchObject({ code: 'expired' })
+    await expect(verifyProofBundle(bundle, verificationOptions('2026-09-01T06:11:00.000Z'))).resolves.toMatchObject({ code: 'expired' })
+    await expect(verifyProofBundle(bundle, verificationOptions(issuedAt, {}, new Set([bundle.nonce])))).resolves.toMatchObject({ code: 'replayed' })
   })
 
   it('rejects malformed, future-issued, or overlong proof lifetimes', async () => {
     const malformed = clone(await createProofBundle(request()))
     malformed.expiresAt = 'not-a-date'
-    await expect(verifyProofBundle(malformed, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_timestamps' })
+    await expect(verifyProofBundle(malformed, verificationOptions())).resolves.toMatchObject({ code: 'invalid_timestamps' })
 
     const future = clone(await createProofBundle(request()))
     future.issuedAt = '2026-09-01T07:00:00.000Z'
-    await expect(verifyProofBundle(future, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_timestamps' })
+    await expect(verifyProofBundle(future, verificationOptions())).resolves.toMatchObject({ code: 'invalid_timestamps' })
 
     const overlong = await createProofBundle(request({ expiresAt: '2026-09-01T07:00:00.000Z' }))
-    await expect(verifyProofBundle(overlong, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_timestamps' })
+    await expect(verifyProofBundle(overlong, verificationOptions())).resolves.toMatchObject({ code: 'invalid_timestamps' })
   })
 
   it('rejects missing claims and over-disclosure', async () => {
     const missing = clone(await createProofBundle(request()))
     missing.disclosures = missing.disclosures.filter((proof) => proof.claim.id !== 'gpa_band')
-    await expect(verifyProofBundle(missing, { now: issuedAt })).resolves.toMatchObject({ code: 'missing_claim' })
+    await expect(verifyProofBundle(missing, verificationOptions())).resolves.toMatchObject({ code: 'missing_claim' })
 
     const excessive = clone(await createProofBundle(request()))
     excessive.disclosures.push({
       ...structuredClone(excessive.disclosures[0]),
       claim: { id: 'subject_ref', value: 'student-7F3A', salt: 'nova-86' },
     })
-    await expect(verifyProofBundle(excessive, { now: issuedAt })).resolves.toMatchObject({ code: 'over_disclosure' })
+    await expect(verifyProofBundle(excessive, verificationOptions())).resolves.toMatchObject({ code: 'over_disclosure' })
   })
 
   it('rejects duplicate disclosures instead of treating them as minimum disclosure', async () => {
     const bundle = clone(await createProofBundle(request()))
     bundle.disclosures.push(structuredClone(bundle.disclosures[0]))
 
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({
+    await expect(verifyProofBundle(bundle, verificationOptions())).resolves.toMatchObject({
       accepted: false,
       code: 'over_disclosure',
     })
@@ -135,14 +201,14 @@ describe('Proof Courier disclosure contract', () => {
     const bundle = clone(await createProofBundle(request()))
     bundle.nonce = 'changed-after-consent'
 
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_holder_signature' })
+    await expect(verifyProofBundle(bundle, verificationOptions(issuedAt, { nonce: bundle.nonce }))).resolves.toMatchObject({ code: 'invalid_holder_signature' })
   })
 
   it('rejects an invalid issuer signature', async () => {
     const bundle = clone(await createProofBundle(request()))
     bundle.issuerSignature = `${bundle.issuerSignature.slice(0, -1)}A`
 
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_issuer_signature' })
+    await expect(verifyProofBundle(bundle, verificationOptions())).resolves.toMatchObject({ code: 'invalid_issuer_signature' })
   })
 
   it('exports a v2 envelope that identifies—but never supplies—the trusted issuer key', async () => {
@@ -164,14 +230,14 @@ describe('Proof Courier disclosure contract', () => {
   it('rejects a widened or temporally impossible consent grant', async () => {
     const widened = clone(await createProofBundle(request(), '2026-09-01T06:02:00.000Z'))
     Object.assign(widened.consent, { maxUses: 2 })
-    await expect(verifyProofBundle(widened, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_consent' })
+    await expect(verifyProofBundle(widened, verificationOptions())).resolves.toMatchObject({ code: 'invalid_consent' })
 
     const late = clone(await createProofBundle(request(), '2026-09-01T06:02:00.000Z'))
     late.consent.grantedAt = '2026-09-01T06:11:00.000Z'
-    await expect(verifyProofBundle(late, { now: issuedAt })).resolves.toMatchObject({ code: 'invalid_consent' })
+    await expect(verifyProofBundle(late, verificationOptions())).resolves.toMatchObject({ code: 'invalid_consent' })
 
     const future = await createProofBundle(request(), '2026-09-01T06:09:00.000Z')
-    await expect(verifyProofBundle(future, { now: '2026-09-01T06:05:00.000Z' })).resolves.toMatchObject({ code: 'invalid_consent' })
+    await expect(verifyProofBundle(future, verificationOptions('2026-09-01T06:05:00.000Z'))).resolves.toMatchObject({ code: 'invalid_consent' })
   })
 
   it('rejects a credential re-signed by an untrusted replacement issuer key', async () => {
@@ -190,7 +256,7 @@ describe('Proof Courier disclosure contract', () => {
     bundle.issuerSignature = toBase64Url(new Uint8Array(attackerSignature))
     Object.assign(bundle, { issuerPublicJwk: attackerPublicJwk })
 
-    await expect(verifyProofBundle(bundle, { now: issuedAt })).resolves.toMatchObject({
+    await expect(verifyProofBundle(bundle, verificationOptions())).resolves.toMatchObject({
       accepted: false,
       code: 'invalid_issuer_signature',
     })
@@ -205,7 +271,7 @@ describe('Proof Courier disclosure contract', () => {
     const malformed = clone(await createProofBundle(request()))
     Object.assign(malformed, { disclosures: null, holderSignature: '*' })
 
-    await expect(verifyProofBundle(malformed, { now: issuedAt })).resolves.toMatchObject({
+    await expect(verifyProofBundle(malformed, verificationOptions())).resolves.toMatchObject({
       accepted: false,
       code: 'invalid_envelope',
       disclosedClaimIds: [],

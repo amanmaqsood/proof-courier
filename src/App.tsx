@@ -29,7 +29,6 @@ import productionCrossOrigin from '../artifacts/release/production-cross-origin.
 import {
   SCHOLARSHIP_AUDIENCE,
   SCHOLARSHIP_PURPOSE,
-  getScholarshipRequest,
   scholarshipRequirements,
 } from './domain/proofVerifier'
 import { evaluateDisclosureRequest } from './domain/requestFirewall'
@@ -37,25 +36,30 @@ import {
   consentToWalletDraft,
   createVerifierState,
   createWalletState,
+  expireWalletDraft,
+  isWalletDraftExpired,
   revokeWalletDraft,
   submitVerifiedApplication,
   type ProofTraceEvent,
   type VerifierState,
   type WalletState,
 } from './proofState'
+import { IndexedDbWalletGrantStore } from './wallet/indexedDbWalletGrantStore'
+import { InMemoryWalletGrantStore, type WalletGrantStore } from './wallet/walletGrantStore'
+import { InMemoryChallengeStore } from './verifier/challengeStore'
 
 type ToolStatus = { supported: boolean; toolNames: string[] }
 type ToolManagerRef = ToolStatus & { sync: () => ToolStatus; dispose: () => void }
 type Trace = ProofTraceEvent & { id: number }
-type WalletStatus = 'no_request' | 'prepared' | 'consented' | 'exported' | 'revoked'
+type WalletStatus = 'no_request' | 'prepared' | 'consented' | 'exporting' | 'exported' | 'revoked' | 'expired' | 'failed_closed'
 const releaseChecks = [
   { name: 'lint', command: 'npm run lint' },
   { name: 'unit and contract tests', command: 'npm test' },
   { name: 'judge scenarios', command: 'npm run eval' },
   { name: 'release-copy consistency', command: 'npm run verify:copy' },
   { name: 'production build', command: 'npm run build' },
-  { name: 'wallet/verifier bundle isolation', command: 'npm run verify:bundles' },
-  { name: 'browser journeys', command: 'npm run e2e' },
+  { name: 'production chunk content scan', command: 'npm run verify:bundles' },
+  { name: 'browser checks', command: 'npm run e2e' },
 ] as const
 const nativeEvidence = {
   exportPassed: true,
@@ -69,6 +73,9 @@ const nativeEvidence = {
     'This receipt proves native WebMCP behavior in the OpenAI Codex in-app browser.',
     'It does not claim a separate natural-language ChatGPT conversation autonomously chose the tool sequence.',
     'All identities, credentials, institutions, claims, and applications are synthetic.',
+    'The linked native receipt predates the IndexedDB wallet wiring; rerun it after deployment before treating reload and cross-tab behavior as production evidence.',
+    'Verifier challenge and replay state remain limited to one active in-memory verifier session.',
+    'The wallet and verifier use separate origins, but both currently serve the same application artifact rather than role-isolated builds.',
   ],
 } as const
 const nativeReceiptUrl = 'https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/live-webmcp-verification.json'
@@ -83,7 +90,7 @@ const judgePrompt = 'Check the fellowship requirements, obtain only the minimum 
 const firewallScenarios = {
   safe: {
     label: 'Safe minimum',
-    items: ['Five derived claims', 'Correct purpose', 'One-use nonce', '10-minute proof'],
+    items: ['Five derived claims', 'Correct purpose', 'Session challenge', '10-minute proof'],
     request: { audience: SCHOLARSHIP_AUDIENCE, purpose: SCHOLARSHIP_PURPOSE, claimIds: minimumClaimIds, nonce: 'scenario-safe-001', ttlSeconds: 600 },
   },
   overreach: {
@@ -124,7 +131,7 @@ function LandingPage() {
   const rawFieldsBlocked = firewall.decision === 'allowed' ? 0 : rawFieldCount
   const safePlanClaims = firewall.decision === 'blocked' ? 0 : firewall.proposedRequest?.claimIds.length ?? scenario.request.claimIds.length
   const proposedItems = firewall.proposedRequest
-    ? ['Age over 18', 'GPA band', 'Eligible residency', '10-minute, one-use proof']
+    ? ['Age over 18', 'GPA band', 'Eligible residency', '10-minute, session-scoped proof']
     : []
 
   async function copyJudgePrompt() {
@@ -152,7 +159,7 @@ function LandingPage() {
               <a className="primary-action" href={publicVerifierUrl} target="_blank">Open verifier <ExternalLink size={15} /></a>
               <a className="secondary-action" href={publicWalletUrl} target="_blank">Open private wallet <ExternalLink size={15} /></a>
             </div>
-            <a className="release-proof-link" href="/evidence"><BadgeCheck size={17} /><span><strong>Release proof passed</strong><small>Native WebMCP · 22/22 attacks · 6/6 browser journeys · 100/100 audit</small></span><ChevronRight size={15} /></a>
+            <a className="release-proof-link" href="/evidence"><BadgeCheck size={17} /><span><strong>Release proof passed</strong><small>Native WebMCP · 22/22 attacks · 10/10 browser checks · 100/100 audit</small></span><ChevronRight size={15} /></a>
           </div>
 
           <div className="proof-route" aria-label="Private wallet to agent to verifier flow">
@@ -172,7 +179,7 @@ function LandingPage() {
               <span className="node-icon"><BadgeCheck size={20} /></span>
               <p>Requesting side</p>
               <h2>Fellowship verifier</h2>
-              <ul><li>Issuer checked</li><li>Audience checked</li><li>Replay blocked</li></ul>
+              <ul><li>Issuer checked</li><li>Audience checked</li><li>Session replay blocked</li></ul>
             </article>
           </div>
         </section>
@@ -226,7 +233,7 @@ function LandingPage() {
               <div><dt>Recovery</dt><dd>{firewall.decision === 'blocked' ? 'Return to the published verifier policy and start a new request.' : 'Prepare the safe five-claim plan for visible human review.'}</dd></div>
             </dl>
           </details>
-          <div className="firewall-contract"><code>overreach → zero export → safe counterproposal → human consent → one-use proof</code><span>Two sites can negotiate through WebMCP without copying private records into chat.</span></div>
+          <div className="firewall-contract"><code>overreach → zero export → safe counterproposal → human consent → session-scoped export</code><span>Two sites can negotiate through WebMCP without copying private records into chat.</span></div>
         </section>
 
         <section className="journey-section">
@@ -235,8 +242,8 @@ function LandingPage() {
           <ol className="journey-steps">
             <li><span>01</span><strong>Read requirements</strong><p>The verifier publishes five allowed claims and prohibits raw source records.</p></li>
             <li><span>02</span><strong>Prepare disclosure</strong><p>The wallet shows the exact audience, purpose, expiry, and derived claims.</p></li>
-            <li><span>03</span><strong>Person consents</strong><p>Only the human control makes the one-time export tool appear.</p></li>
-            <li><span>04</span><strong>Agent carries proof</strong><p>The verifier checks issuer commitment, holder binding, expiry, and replay.</p></li>
+            <li><span>03</span><strong>Person consents</strong><p>Only the human control makes the session-scoped export tool appear.</p></li>
+            <li><span>04</span><strong>Agent carries proof</strong><p>The verifier checks issuer commitment, holder binding, expiry, and same-session reuse.</p></li>
             <li><span>05</span><strong>Person submits</strong><p>No site tool can consent or send the final application.</p></li>
           </ol>
         </section>
@@ -250,57 +257,176 @@ function LandingPage() {
 function WalletPage() {
   const [wallet, setWallet] = useState<WalletState>(createWalletState)
   const walletRef = useRef(wallet)
+  const grantStoreRef = useRef<WalletGrantStore | null>(null)
   const managerRef = useRef<ToolManagerRef | null>(null)
   const traceId = useRef(0)
   const [tools, setTools] = useState<ToolStatus>({ supported: false, toolNames: [] })
   const [traces, setTraces] = useState<Trace[]>([])
+  const [grantStoreReady, setGrantStoreReady] = useState(false)
+  const [grantStorageMode, setGrantStorageMode] = useState<'loading' | 'durable' | 'session'>('loading')
 
   const addTrace = useCallback((event: ProofTraceEvent) => {
     traceId.current += 1
     setTraces((items) => [...items, { ...event, id: traceId.current }].slice(-8))
   }, [])
 
+  const showWalletState = useCallback((next: WalletState) => {
+    walletRef.current = next
+    setWallet(next)
+  }, [])
+
   useEffect(() => {
+    let cancelled = false
+    let unsubscribe: (() => void) | undefined
+    let store: WalletGrantStore
+    let storageMode: 'durable' | 'session'
+    try {
+      store = new IndexedDbWalletGrantStore()
+      storageMode = 'durable'
+    } catch {
+      store = new InMemoryWalletGrantStore(walletRef.current)
+      storageMode = 'session'
+    }
+    grantStoreRef.current = store
+
+    const readCurrent = async () => {
+      const next = await store.read()
+      if (!cancelled) showWalletState(next)
+    }
+
+    void (async () => {
+      try {
+        await readCurrent()
+      } catch {
+        store.close()
+        store = new InMemoryWalletGrantStore(walletRef.current)
+        storageMode = 'session'
+        grantStoreRef.current = store
+        await readCurrent()
+        if (!cancelled) {
+          addTrace({ toolName: 'wallet_storage', status: 'blocked', summary: 'Durable browser storage was unavailable. Authority remains limited to this session.', createdAt: new Date().toISOString() })
+        }
+      }
+      if (cancelled) return
+      unsubscribe = store.subscribe(() => { void readCurrent() })
+      setGrantStorageMode(storageMode)
+      setGrantStoreReady(true)
+    })()
+
+    return () => {
+      cancelled = true
+      unsubscribe?.()
+      store.close()
+      if (grantStoreRef.current === store) grantStoreRef.current = null
+    }
+  }, [addTrace, showWalletState])
+
+  useEffect(() => {
+    if (!grantStoreReady || !grantStoreRef.current) return
     let cancelled = false
     let manager: ToolManagerRef | null = null
     void import('./walletWebmcp').then(({ registerWalletTools }) => {
       manager = registerWalletTools({
         getState: () => walletRef.current,
-        setState: (next) => { walletRef.current = next; setWallet(next) },
+        setState: showWalletState,
         focusConsent: () => window.setTimeout(() => document.getElementById('consent-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80),
         recordTrace: addTrace,
+        grantStore: grantStoreRef.current ?? undefined,
       })
       if (cancelled) return manager.dispose()
       managerRef.current = manager
       setTools(manager)
     })
     return () => { cancelled = true; managerRef.current = null; manager?.dispose() }
-  }, [addTrace])
+  }, [addTrace, grantStoreReady, showWalletState])
 
   useEffect(() => {
     walletRef.current = wallet
     if (managerRef.current) setTools(managerRef.current.sync())
   }, [wallet])
 
-  function approve() {
-    const next = consentToWalletDraft(walletRef.current)
-    walletRef.current = next
-    setWallet(next)
-    addTrace({ toolName: 'human_consent', status: 'succeeded', summary: 'Person approved five claims for one audience and purpose.', createdAt: new Date().toISOString() })
+  useEffect(() => {
+    const draft = wallet.draft
+    if (!draft || !['prepared', 'consented'].includes(draft.status)) return
+    const expiresAt = Date.parse(draft.request.expiresAt)
+    const delay = Number.isFinite(expiresAt) ? Math.max(0, expiresAt - Date.now()) : 0
+    const timer = window.setTimeout(() => {
+      void (async () => {
+      const current = walletRef.current
+      const next = expireWalletDraft(current)
+      if (next === current) return
+      try {
+        const committed = grantStoreRef.current
+          ? await grantStoreRef.current.compareAndSet(current.version, next)
+          : next
+        showWalletState(committed)
+      } catch {
+        const latest = await grantStoreRef.current?.read()
+        if (latest) showWalletState(latest)
+        return
+      }
+      addTrace({ toolName: 'wallet_request_expired', status: 'blocked', summary: 'The disclosure expired. A fresh verifier request and human approval are required.', createdAt: new Date().toISOString() })
+      })()
+    }, Math.min(delay + 10, 2_147_483_647))
+    return () => window.clearTimeout(timer)
+  }, [addTrace, showWalletState, wallet.draft])
+
+  async function approve() {
+    try {
+      if (isWalletDraftExpired(walletRef.current)) {
+        const current = walletRef.current
+        const next = expireWalletDraft(current)
+        const committed = next !== current && grantStoreRef.current
+          ? await grantStoreRef.current.compareAndSet(current.version, next)
+          : next
+        showWalletState(committed)
+        addTrace({ toolName: 'human_consent', status: 'blocked', summary: 'The disclosure expired before approval. Read a fresh verifier request.', createdAt: new Date().toISOString() })
+        return
+      }
+      const current = walletRef.current
+      const next = consentToWalletDraft(current)
+      const committed = grantStoreRef.current
+        ? await grantStoreRef.current.compareAndSet(current.version, next)
+        : next
+      showWalletState(committed)
+      addTrace({ toolName: 'human_consent', status: 'succeeded', summary: 'Person approved five claims for one audience and purpose.', createdAt: new Date().toISOString() })
+    } catch {
+      const latest = await grantStoreRef.current?.read()
+      if (latest) showWalletState(latest)
+      addTrace({ toolName: 'human_consent', status: 'blocked', summary: 'Wallet authority changed in another tab. The latest state was restored without granting new authority.', createdAt: new Date().toISOString() })
+    }
   }
 
-  function revoke() {
-    const next = revokeWalletDraft(walletRef.current)
-    walletRef.current = next
-    setWallet(next)
-    addTrace({ toolName: 'human_revoke', status: 'succeeded', summary: 'Person revoked the disclosure before export.', createdAt: new Date().toISOString() })
+  async function revoke() {
+    try {
+      const current = walletRef.current
+      const next = revokeWalletDraft(current)
+      const committed = grantStoreRef.current
+        ? await grantStoreRef.current.compareAndSet(current.version, next)
+        : next
+      showWalletState(committed)
+      addTrace({ toolName: 'human_revoke', status: 'succeeded', summary: 'Person revoked the disclosure before export.', createdAt: new Date().toISOString() })
+    } catch {
+      const latest = await grantStoreRef.current?.read()
+      if (latest) showWalletState(latest)
+      addTrace({ toolName: 'human_revoke', status: 'blocked', summary: 'Wallet authority changed in another tab. The latest state was restored.', createdAt: new Date().toISOString() })
+    }
   }
 
-  function reset() {
-    const next = createWalletState()
-    walletRef.current = next
-    setWallet(next)
-    setTraces([])
+  async function reset() {
+    try {
+      const current = walletRef.current
+      const next: WalletState = { version: current.version + 1 }
+      const committed = grantStoreRef.current
+        ? await grantStoreRef.current.compareAndSet(current.version, next)
+        : next
+      showWalletState(committed)
+      setTraces([])
+    } catch {
+      const latest = await grantStoreRef.current?.read()
+      if (latest) showWalletState(latest)
+      addTrace({ toolName: 'wallet_reset', status: 'blocked', summary: 'Wallet state changed in another tab. Reset did not overwrite the newer authority state.', createdAt: new Date().toISOString() })
+    }
   }
 
   const status: WalletStatus = wallet.draft?.status ?? 'no_request'
@@ -310,7 +436,8 @@ function WalletPage() {
       <header className="site-header app-header">
         <Brand context="Private credential wallet" />
         <ToolInventory tools={tools} />
-        <button className="reset-link" onClick={reset}><RotateCcw size={14} /> Reset</button>
+        <span className="prototype-note">{grantStorageMode === 'durable' ? 'Reload-safe wallet authority' : grantStorageMode === 'session' ? 'Session-only fallback' : 'Opening wallet storage…'}</span>
+        <button className="reset-link" onClick={() => { void reset() }}><RotateCcw size={14} /> Reset</button>
       </header>
 
       <main className="workspace">
@@ -326,7 +453,7 @@ function WalletPage() {
               <MaskedField label="Date of birth" value="••••-••-18" />
               <MaskedField label="Student ID" value="••••••••••" />
               <MaskedField label="Exact GPA" value="•.••" />
-              <MaskedField label="Transcript" value="32 courses sealed" />
+              <MaskedField label="Transcript" value="32 courses hidden" />
               <MaskedField label="Home address" value="••••••••••••" />
             </div>
             <div className="privacy-rule"><Ban size={16} /><p>These private fields are not accepted by any wallet tool and are absent from exported proof bundles.</p></div>
@@ -344,9 +471,12 @@ function WalletPage() {
                   <div><dt>Expires</dt><dd>{new Date(wallet.draft.request.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</dd></div>
                 </dl>
                 <div className="claim-stack">{scholarshipRequirements.map((claim) => <ClaimRow key={claim.id} label={claim.label} privateAlternative={claim.privateAlternative} />)}</div>
-                {status === 'prepared' && <div className="consent-actions"><button className="approve-consent" onClick={approve}><UserRoundCheck size={17} /> Approve this disclosure</button><button className="reject-consent" onClick={revoke}>Reject</button></div>}
-                {status === 'consented' && <div className="consent-result ready"><KeyRound size={19} /><div><strong>One-time export unlocked</strong><p>ChatGPT can now call <code>wallet_export_proof</code>. This granted no broader access.</p></div></div>}
-                {status === 'exported' && <div className="consent-result exported"><PackageCheck size={19} /><div><strong>Minimum proof exported once</strong><p>The export tool has been withdrawn. Five claims crossed; zero private records crossed.</p></div></div>}
+                {status === 'prepared' && <div className="consent-actions"><button className="approve-consent" onClick={() => { void approve() }}><UserRoundCheck size={17} /> Approve this disclosure</button><button className="reject-consent" onClick={() => { void revoke() }}>Reject</button></div>}
+                {status === 'consented' && <div className="consent-result ready"><KeyRound size={19} /><div><strong>One-use export unlocked</strong><p>ChatGPT may atomically claim <code>wallet_export_proof</code> across same-origin wallet tabs. This granted no broader access.</p></div></div>}
+                {status === 'exporting' && <div className="consent-result ready"><KeyRound size={19} /><div><strong>Session export claimed</strong><p>This grant is in flight; another call with the same state version is blocked.</p></div></div>}
+                {status === 'exported' && <div className="consent-result exported"><PackageCheck size={19} /><div><strong>Proof exported</strong><p>The export tool is durably withdrawn from this browser wallet. Five claims crossed; zero private records crossed.</p></div></div>}
+                {status === 'failed_closed' && <div className="consent-result revoked"><Ban size={19} /><div><strong>Export failed closed</strong><p>The claimed authority was withdrawn. Prepare and approve a fresh request before retrying.</p></div></div>}
+                {status === 'expired' && <div className="consent-result revoked"><Ban size={19} /><div><strong>Disclosure expired</strong><p>No export occurred. Read a fresh verifier request before asking for consent again.</p></div></div>}
                 {status === 'revoked' && <div className="consent-result revoked"><Ban size={19} /><div><strong>Disclosure revoked</strong><p>No proof was exported. Ask ChatGPT to prepare a fresh request if needed.</p></div></div>}
               </>
             )}
@@ -367,6 +497,7 @@ function WalletPage() {
 
 function FellowshipPage() {
   const [verifier, setVerifier] = useState<VerifierState>(createVerifierState)
+  const [challengeStore] = useState(() => new InMemoryChallengeStore())
   const verifierRef = useRef(verifier)
   const managerRef = useRef<ToolManagerRef | null>(null)
   const traceId = useRef(0)
@@ -387,13 +518,16 @@ function FellowshipPage() {
         setState: (next) => { verifierRef.current = next; setVerifier(next) },
         focusResult: () => window.setTimeout(() => document.getElementById('verification-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80),
         recordTrace: addTrace,
+        challengeStore,
       })
       if (cancelled) return manager.dispose()
       managerRef.current = manager
       setTools(manager)
     })
     return () => { cancelled = true; managerRef.current = null; manager?.dispose() }
-  }, [addTrace])
+  }, [addTrace, challengeStore])
+
+  useEffect(() => () => challengeStore.close(), [challengeStore])
 
   useEffect(() => {
     verifierRef.current = verifier
@@ -413,8 +547,6 @@ function FellowshipPage() {
     setVerifier(next)
     setTraces([])
   }
-
-  const request = getScholarshipRequest()
 
   return (
     <div className="site-shell app-page fellowship-page">
@@ -437,7 +569,7 @@ function FellowshipPage() {
             <dl className="contract-meta">
               <div><dt>Audience</dt><dd>{SCHOLARSHIP_AUDIENCE}</dd></div>
               <div><dt>Purpose</dt><dd>{SCHOLARSHIP_PURPOSE}</dd></div>
-              <div><dt>Nonce</dt><dd>{request.nonce}</dd></div>
+              <div><dt>Challenge</dt><dd>Issued through WebMCP</dd></div>
             </dl>
           </section>
 
@@ -496,19 +628,19 @@ function EvidencePage() {
         </section>
 
         <section className="evidence-metrics" aria-label="Release evidence summary">
-          <article><strong>{evalReceipt.passed}/{evalReceipt.total}</strong><span>adversarial scenarios</span><small>Audience, purpose, expiry, replay, tampering, authority</small></article>
-          <article><strong>6/6</strong><span>browser journeys</span><small>Cross-origin flow, scenario lab, recovery, evidence, mobile, accessibility</small></article>
+          <article><strong>{evalReceipt.passed}/{evalReceipt.total}</strong><span>adversarial scenarios</span><small>Audience, purpose, expiry, session replay, tampering, authority</small></article>
+          <article><strong>10/10</strong><span>browser checks</span><small>Six product journeys · four durability and concurrency checks</small></article>
           <article><strong>{nekudaAudit.score}/100</strong><span>independent tool audit</span><small>Zero findings across definitions, schemas, toolset, and safety</small></article>
-          <article><strong>0 → 1 → 0</strong><span>export capability</span><small>Absent, human-unlocked, then withdrawn</small></article>
+          <article><strong>0 → 1 → 0</strong><span>wallet capability</span><small>Absent, human-unlocked, then atomically withdrawn across wallet tabs</small></article>
         </section>
 
         <section className="evidence-section lifecycle-evidence">
-          <div className="evidence-section-heading"><div><p className="section-kicker">Native WebMCP proof</p><h2>A capability that lives for exactly one call.</h2></div><p>Captured across two separate live tabs in the OpenAI Codex in-app browser. The page adds and removes the actual WebMCP tool as authority changes.</p></div>
+          <div className="evidence-section-heading"><div><p className="section-kicker">Native WebMCP proof</p><h2>A capability recorded for one call in one browser session.</h2></div><p>Captured across two separate live tabs in the OpenAI Codex in-app browser. The page adds and removes the actual WebMCP tool as in-memory authority changes.</p></div>
           <div className="capability-timeline">
             <article><span>01 · Before consent</span><strong>ABSENT</strong><code>wallet_export_proof</code><p>The agent can prepare a disclosure, but it cannot export one.</p></article>
             <div className="timeline-arrow"><ChevronRight size={20} /><small>human click</small></div>
-            <article className="capability-live"><span>02 · Approved</span><strong>LIVE</strong><code>wallet_export_proof</code><p>One purpose-bound export becomes available. No broader wallet access.</p></article>
-            <div className="timeline-arrow"><ChevronRight size={20} /><small>one call</small></div>
+            <article className="capability-live"><span>02 · Approved</span><strong>LIVE</strong><code>wallet_export_proof</code><p>One purpose-bound export becomes available in the recorded wallet session. No broader wallet access.</p></article>
+            <div className="timeline-arrow"><ChevronRight size={20} /><small>one session call</small></div>
             <article><span>03 · Exported</span><strong>WITHDRAWN</strong><code>wallet_get_disclosure_receipt</code><p>The export tool disappears and only a safe receipt remains.</p></article>
           </div>
           <div className="live-receipt-line"><BadgeCheck size={18} /><strong>Live receipt confirms:</strong><span>before {String(nativeEvidence.exportBeforeConsent)}</span><span>after consent {String(nativeEvidence.exportAfterConsent)}</span><span>after export {String(nativeEvidence.exportAfterUse)}</span><a href={nativeReceiptUrl} target="_blank">Inspect machine receipt <ExternalLink size={12} /></a></div>
@@ -557,8 +689,8 @@ function EvidencePage() {
 }
 
 function CapabilityGate({ status }: { status: WalletStatus }) {
-  const state = status === 'consented' ? 'live' : status === 'exported' ? 'withdrawn' : status === 'revoked' ? 'revoked' : 'absent'
-  const label = state === 'live' ? 'LIVE FOR ONE CALL' : state === 'withdrawn' ? 'WITHDRAWN AFTER USE' : state === 'revoked' ? 'REVOKED' : 'ABSENT UNTIL CONSENT'
+  const state = status === 'consented' ? 'live' : ['exporting', 'exported', 'failed_closed'].includes(status) ? 'withdrawn' : ['revoked', 'expired'].includes(status) ? 'revoked' : 'absent'
+  const label = status === 'exporting' ? 'CLAIMED · EXPORT IN PROGRESS' : status === 'failed_closed' ? 'WITHDRAWN · FRESH APPROVAL REQUIRED' : status === 'expired' ? 'EXPIRED · FRESH REQUEST REQUIRED' : state === 'live' ? 'LIVE FOR ONE DURABLE CLAIM' : state === 'withdrawn' ? 'WITHDRAWN IN THIS BROWSER WALLET' : state === 'revoked' ? 'REVOKED' : 'ABSENT UNTIL CONSENT'
   return (
     <div className={`capability-gate capability-${state}`}>
       <div><KeyRound size={16} /><span>Dynamic capability</span><code>wallet_export_proof</code></div>
@@ -596,7 +728,10 @@ function TraceList({ traces, empty }: { traces: Trace[]; empty: string }) {
 function consentHeading(status: WalletStatus) {
   if (status === 'prepared') return 'Review five derived claims'
   if (status === 'consented') return 'Consent granted'
+  if (status === 'exporting') return 'Preparing the approved proof'
   if (status === 'exported') return 'Proof left the wallet'
+  if (status === 'failed_closed') return 'Fresh approval required'
+  if (status === 'expired') return 'Request expired'
   if (status === 'revoked') return 'Request closed'
   return 'Waiting for a request'
 }

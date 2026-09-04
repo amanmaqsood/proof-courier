@@ -51,6 +51,15 @@ export type ProofRequest = {
   expiresAt: string
 }
 
+export type IssuedProofChallenge = {
+  audience: typeof SCHOLARSHIP_AUDIENCE
+  purpose: typeof SCHOLARSHIP_PURPOSE
+  nonce: string
+  requiredClaimIds: PublicClaimId[]
+  issuedAt: string
+  expiresAt: string
+}
+
 export type ProofBundle = {
   version: 2
   issuerId: typeof TRUSTED_ISSUER_ID
@@ -81,6 +90,8 @@ export type VerificationResult = {
     | 'invalid_timestamps'
     | 'invalid_consent'
     | 'invalid_envelope'
+    | 'invalid_challenge'
+    | 'unissued_nonce'
     | 'replayed'
     | 'over_disclosure'
     | 'missing_claim'

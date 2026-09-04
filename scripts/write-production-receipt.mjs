@@ -22,7 +22,7 @@ const receipt = {
     'Wallet local storage is not visible to the verifier.',
     'Neither page fetches resources from the peer origin.',
     'An overreaching request releases zero data and receives a safe counterproposal.',
-    'Only visible human consent registers the one-use proof export capability.',
+    'Only visible human consent registers the single-call export capability in the tested wallet session.',
     'The verifier accepts the agent-carried proof and final submission remains human-only.',
   ],
 }
