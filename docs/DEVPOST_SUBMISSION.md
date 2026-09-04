@@ -42,7 +42,7 @@ Most agent safety demos add a confirmation dialog before a powerful action. Proo
 
 ## How it was tested
 
-The repository contains 22 named adversarial scenarios covering request overreach, consent widening or future-dating, issuer trust, wrong audience or purpose, expiry, replay, missing or extra claims, tampering, and dynamic authority. 10 Playwright checks include six complete product journeys across separate wallet and verifier origins plus four wallet durability and concurrency checks. They exercise all three Request Firewall scenarios, reload and two-tab races, the evidence room and 390px layouts, malformed-proof recovery, and serious/critical accessibility scans on every judge-facing route. A separate role-build matrix records 21 role-isolation outcomes across three local artifacts: 12 role routes and nine owner/peer entry-chunk responses. 1 isolated-artifact browser journey then completes request negotiation, visible consent, atomic export, proof verification, and the human-only final-action boundary against those builds on separate processes. `npm run verify` emits machine-readable receipts. A native WebMCP run in the OpenAI Codex in-app browser tested the deployed build. In that recorded session, five synthetic claims crossed, zero private fields crossed, export disappeared after use, verification passed, and no agent submission tool appeared. The public `/evidence` route links the receipts, source revision, and limits behind each claim.
+The repository contains 78 unit and contract tests plus 22 named adversarial scenarios covering request overreach, consent widening or future-dating, issuer trust, wrong audience or purpose, expiry, replay, missing or extra claims, tampering, and dynamic authority. 10 Playwright checks include six complete product journeys across separate wallet and verifier origins plus four wallet durability and concurrency checks. They exercise all three Request Firewall scenarios, reload and two-tab races, the evidence room and 390px layouts, malformed-proof recovery, and serious or critical accessibility scans on every judge-facing route. A role-build matrix records 21 role-isolation outcomes across three independent artifacts: 12 role routes and nine owner or peer entry-chunk responses. 1 isolated-artifact browser journey then completes request negotiation, visible consent, atomic export, proof verification, and the human-only final-action boundary against those builds on separate processes. The same 21-check route and chunk matrix passes on the canonical production origins. `npm run verify` emits machine-readable receipts. An earlier native WebMCP run in the OpenAI Codex in-app browser carried five synthetic claims, carried zero private fields, withdrew export after use, verified the proof, and exposed no agent submission tool. That native receipt predates the IndexedDB wallet wiring and says so. The final role-isolated release was rerun through the public browser harness after production promotion. The public `/evidence` route links the receipts, source revision, and limits behind each claim.
 
 ## Scope and limits
 
@@ -52,7 +52,7 @@ All people, institutions, credentials, and applications are synthetic. Wallet ex
 
 React, TypeScript, WebMCP (`document.modelContext.registerTool`), Web Crypto, Vitest, Playwright, Vite, and Vercel.
 
-## Links to add after verification
+## Submission links
 
 - Live app: https://proof-courier-orcin.vercel.app
 - Judge evidence room: https://proof-courier-orcin.vercel.app/evidence
