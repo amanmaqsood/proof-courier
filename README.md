@@ -158,6 +158,7 @@ Every result below links to a committed machine-readable receipt.
 | Direct live tool smoke with GoogleChromeLabs `webmcp-evals` | 5/5 passed, 0 errors | [webmcp-smoke.json](artifacts/evals/third-party/webmcp-smoke.json) |
 | Project-run audit with Nekuda WebMCP Workbench tooling | 100/100, 0 findings | [nekuda-wallet-audit.json](artifacts/evals/third-party/nekuda-wallet-audit.json) |
 | Local role-build isolation matrix | 21/21 passed: role routes and owner/peer entry chunks | [role-builds.json](artifacts/release/role-builds.json) |
+| Canonical browser journey against emitted role artifacts | 1/1 passed against emitted role artifacts | [role-browser.json](artifacts/release/role-browser.json) |
 | Deployed two-origin journey, storage boundary, and peer-fetch checks | Passed | [production-cross-origin.json](artifacts/release/production-cross-origin.json) |
 | Native WebMCP consent and capability lifecycle | Passed | [live-webmcp-verification.json](artifacts/release/live-webmcp-verification.json) |
 
@@ -172,6 +173,7 @@ The full release gate runs:
 - the TypeScript and Vite production build;
 - production-chunk fixture-placement and raw-value scans;
 - three independent local role builds with module-graph, secret-content, source-map, route, and entry-chunk isolation checks;
+- one complete consent, export, verification, and human-only-final-action browser journey against those emitted role artifacts on three separate processes;
 - ten browser checks: six product journeys covering keyboard operation, narrow viewports, the Request Firewall scenario lab, rejected-proof recovery, and automated serious/critical accessibility scans, plus four wallet durability and concurrency checks.
 
 The public [evidence room](https://proof-courier-orcin.vercel.app/evidence) turns those receipts into a judge-readable interface.
@@ -213,6 +215,7 @@ npm run verify
 | `npm run build` | TypeScript compilation and production Vite bundles |
 | `npm run verify:bundles` | Signing-fixture placement and raw-value absence across production chunks |
 | `npm run verify:roles` | Separate wallet, verifier, and showcase artifacts; forbidden module/content scans; simulated-origin 200/404 route and entry-chunk matrix |
+| `npm run e2e:roles` | Canonical WebMCP journey against the emitted role artifacts on isolated local processes |
 | `npm run e2e` | Ten local browser checks: six product journeys plus four wallet durability/concurrency checks |
 | `npm run e2e:production` | Canonical journey against the public wallet and verifier |
 | `npm run verify` | The complete local and CI release gate |

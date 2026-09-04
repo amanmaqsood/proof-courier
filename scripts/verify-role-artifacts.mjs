@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
-import { createServer } from 'node:http'
 import { fileURLToPath } from 'node:url'
 import { relative, resolve } from 'node:path'
+import { roleNames, rolePrimaryRoutes, startRoleArtifactServer } from './role-artifact-server.mjs'
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
-const roles = ['wallet', 'verifier', 'showcase']
-const primaryRoutes = { wallet: '/wallet', verifier: '/fellowship', showcase: '/' }
+const roles = roleNames
+const primaryRoutes = rolePrimaryRoutes
 const securityHeaderNames = [
   'Content-Security-Policy',
   'Cross-Origin-Opener-Policy',
@@ -157,7 +157,7 @@ async function verifyHttpIsolation(receipts) {
   const checks = []
   try {
     for (const role of roles) {
-      servers.push(await startRoleServer(role, ports[role]))
+      servers.push(await startRoleArtifactServer({ root, role, port: ports[role] }))
     }
 
     const routeMatrix = {
@@ -194,47 +194,4 @@ async function recordFetch(checks, role, path, url, expectedStatus) {
   if (response.status !== expectedStatus) {
     failures.push(`${role} returned ${response.status} for ${path}; expected ${expectedStatus}`)
   }
-}
-
-function startRoleServer(role, port) {
-  const directory = resolve(root, 'dist-roles', role)
-  const primaryRoute = primaryRoutes[role]
-  const htmlRoutes = role === 'showcase' ? new Set(['/', '/evidence']) : new Set([primaryRoute])
-  const server = createServer(async (request, response) => {
-    const path = new URL(request.url ?? '/', `http://127.0.0.1:${port}`).pathname
-    if (path === '/' && role !== 'showcase') {
-      response.writeHead(302, { location: primaryRoute })
-      response.end()
-      return
-    }
-    if (htmlRoutes.has(path)) {
-      const body = await readFile(resolve(directory, 'index.html'))
-      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
-      response.end(body)
-      return
-    }
-    if (path.startsWith('/assets/')) {
-      const filePath = resolve(directory, `.${path}`)
-      if (!filePath.startsWith(resolve(directory, 'assets'))) {
-        response.writeHead(404)
-        response.end()
-        return
-      }
-      try {
-        const body = await readFile(filePath)
-        response.writeHead(200, { 'content-type': path.endsWith('.js') ? 'text/javascript; charset=utf-8' : 'text/css; charset=utf-8' })
-        response.end(body)
-      } catch {
-        response.writeHead(404)
-        response.end()
-      }
-      return
-    }
-    response.writeHead(404)
-    response.end()
-  })
-  return new Promise((done, reject) => {
-    server.once('error', reject)
-    server.listen(port, '127.0.0.1', () => done(server))
-  })
 }

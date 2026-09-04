@@ -4,6 +4,7 @@ const externalBaseUrl = process.env.PLAYWRIGHT_BASE_URL
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: 'role-isolated.spec.ts',
   fullyParallel: false,
   timeout: 30_000,
   expect: { timeout: 7_000 },

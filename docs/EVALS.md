@@ -22,6 +22,7 @@ These are supplemental checks, not certifications. The project-owned adversarial
 | Production compilation | `npm run build` | hashed `dist` assets |
 | Production chunk content | `npm run verify:bundles` | signing fixtures confined to the wallet-named chunk; listed raw record values absent from every chunk; does not prove role-specific deployment isolation |
 | Local role artifacts | `npm run verify:roles` | 21/21 simulated-origin route and owner/peer entry-chunk checks across three independent builds, plus module/content/source-map checks, in `artifacts/release/role-builds.json` |
+| Isolated role browser journey | `npm run e2e:roles` | 1/1 canonical journey against emitted wallet, verifier, and showcase artifacts on separate processes in `artifacts/release/role-browser.json` |
 | Browser journey | `npm run e2e` | ten checks: six product journeys plus four wallet reload, concurrency, and metadata-notification checks |
 | Complete receipt | `npm run verify` | `artifacts/release/verification.json` |
 

@@ -11,4 +11,5 @@ outputs/
 artifacts/evals/.vitest-results.json
 artifacts/e2e/
 artifacts/playwright-report/
+artifacts/playwright-role-report/
 test-results/

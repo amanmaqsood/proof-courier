@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const evalReceipt = JSON.parse(await readFile(resolve(root, 'artifacts/evals/scenario-results.json'), 'utf8'))
 const browserResults = JSON.parse(await readFile(resolve(root, 'artifacts/e2e/results.json'), 'utf8'))
+const roleBrowserReceipt = JSON.parse(await readFile(resolve(root, 'artifacts/release/role-browser.json'), 'utf8'))
 const roleReceipt = JSON.parse(await readFile(resolve(root, 'artifacts/release/role-builds.json'), 'utf8'))
 
 async function collectFiles(directory) {
@@ -33,7 +34,7 @@ const buildArtifacts = await Promise.all(buildFiles.sort().map(async (path) => {
 const receipt = {
   suite: 'Proof Courier release gate',
   command: 'npm run verify',
-  success: evalReceipt.success && roleReceipt.success && browserResults.stats.unexpected === 0,
+  success: evalReceipt.success && roleReceipt.success && roleBrowserReceipt.success && browserResults.stats.unexpected === 0,
   generatedAt: new Date().toISOString(),
   sourceRevision: process.env.GITHUB_SHA ?? 'local-working-tree',
   checks: [
@@ -44,6 +45,7 @@ const receipt = {
     { name: 'production build', command: 'npm run build', status: 'passed' },
     { name: 'production chunk content scan', command: 'npm run verify:bundles', status: 'passed' },
     { name: 'role artifact isolation', command: 'npm run verify:roles', status: roleReceipt.success ? 'passed' : 'failed', total: roleReceipt.routeChecks.length },
+    { name: 'isolated role browser journey', command: 'npm run e2e:roles', status: roleBrowserReceipt.success ? 'passed' : 'failed', total: roleBrowserReceipt.total },
     { name: 'browser checks', command: 'npm run e2e', status: browserResults.stats.unexpected === 0 ? 'passed' : 'failed', total: browserResults.stats.expected },
   ],
   buildArtifacts,

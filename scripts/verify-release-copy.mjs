@@ -2,16 +2,18 @@ import { readFile } from 'node:fs/promises'
 
 const evalReceipt = JSON.parse(await readFile('artifacts/evals/scenario-results.json', 'utf8'))
 const browserResults = JSON.parse(await readFile('artifacts/e2e/results.json', 'utf8'))
+const roleBrowserReceipt = JSON.parse(await readFile('artifacts/release/role-browser.json', 'utf8'))
 const roleReceipt = JSON.parse(await readFile('artifacts/release/role-builds.json', 'utf8'))
 const browserTotal = browserResults.stats.expected
 const scenarioTotal = evalReceipt.total
 const roleTotal = roleReceipt.routeChecks.length
+const roleBrowserTotal = roleBrowserReceipt.total
 
 const checks = [
-  ['README.md', [`${scenarioTotal} adversarial scenarios`, `${scenarioTotal} named adversarial judge scenarios`, `${roleTotal}/${roleTotal} passed`]],
-  ['docs/DEVPOST_SUBMISSION.md', [`${scenarioTotal} named adversarial scenarios`, `${browserTotal} Playwright checks`, `${roleTotal} role-isolation outcomes`]],
-  ['docs/EVALS.md', [`${scenarioTotal} named scenarios`, `${roleTotal}/${roleTotal} simulated-origin`]],
-  ['src/App.tsx', [`${scenarioTotal}/${scenarioTotal} attacks`, `${browserTotal}/${browserTotal} browser checks`, `${roleTotal}/${roleTotal} route and entry-chunk checks`]],
+  ['README.md', [`${scenarioTotal} adversarial scenarios`, `${scenarioTotal} named adversarial judge scenarios`, `${roleTotal}/${roleTotal} passed`, `${roleBrowserTotal}/${roleBrowserTotal} passed against emitted role artifacts`]],
+  ['docs/DEVPOST_SUBMISSION.md', [`${scenarioTotal} named adversarial scenarios`, `${browserTotal} Playwright checks`, `${roleTotal} role-isolation outcomes`, `${roleBrowserTotal} isolated-artifact browser journey`]],
+  ['docs/EVALS.md', [`${scenarioTotal} named scenarios`, `${roleTotal}/${roleTotal} simulated-origin`, `${roleBrowserTotal}/${roleBrowserTotal}`]],
+  ['src/App.tsx', [`${scenarioTotal}/${scenarioTotal} attacks`, `${browserTotal}/${browserTotal} browser checks`, `${roleTotal}/${roleTotal} route and entry-chunk checks`, `${roleBrowserTotal}/${roleBrowserTotal} isolated-artifact journey`]],
   ['e2e/proof-courier.spec.ts', [`${scenarioTotal}/${scenarioTotal}`, `${browserTotal}/${browserTotal}`]],
   ['README.md', ['active verifier session', 'Atomic transactions allow one claim across tested reload and cross-tab races', 'does **not** prove role-specific build isolation', 'Local role builds pass route/chunk isolation', 'public Vercel projects have not been cut over']],
   ['docs/DEVPOST_SUBMISSION.md', ['same-origin browser storage', 'verifier challenge and replay state remain in memory', 'shared application artifact', 'Local release-candidate builds are role-isolated']],
@@ -29,6 +31,9 @@ const forbiddenClaims = [
 const failures = []
 if (!roleReceipt.success || roleReceipt.roles.length !== 3 || roleReceipt.routeChecks.some((check) => !check.passed)) {
   failures.push('artifacts/release/role-builds.json does not contain a passing three-role isolation receipt')
+}
+if (!roleBrowserReceipt.success || roleBrowserReceipt.failed !== 0 || roleBrowserTotal !== 1) {
+  failures.push('artifacts/release/role-browser.json does not contain the single passing isolated-artifact browser journey')
 }
 for (const [path, expectedFragments] of checks) {
   const body = await readFile(path, 'utf8')

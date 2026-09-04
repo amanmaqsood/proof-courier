@@ -1,0 +1,16 @@
+{
+  "suite": "Proof Courier isolated role browser journey",
+  "command": "npm run e2e:roles",
+  "success": true,
+  "generatedAt": "2026-09-04T03:37:01.893Z",
+  "total": 1,
+  "passed": 1,
+  "failed": 0,
+  "assertions": [
+    "Verifier, wallet, and showcase pages execute from three independent emitted artifacts and processes.",
+    "Each role exposes only its intended WebMCP tool surface; showcase exposes no operational tools.",
+    "The verifier request is counterproposed, prepared, visibly approved, atomically exported, and verified.",
+    "Zero private fields cross the wallet boundary and no agent submission capability appears.",
+    "Peer role routes return 404, required security headers are present, and no peer-origin resource fetch occurs."
+  ]
+}
