@@ -1,17 +1,17 @@
 {
-  "suite": "Proof Courier protected role deployment candidates",
+  "suite": "Proof Courier canonical production role deployments",
   "command": "vercel promote for each verified candidate, followed by public canonical curl checks",
   "success": true,
-  "generatedAt": "2026-09-04T03:45:28Z",
-  "sourceRevision": "9183e7afd4b19365cfdf8549e877ee1bfadf9413",
+  "generatedAt": "2026-09-04T03:55:13Z",
+  "sourceRevision": "3f6c2f736625400f77b1ca84b38b0075989ec382",
   "canonicalAliasesPromoted": true,
   "summary": "Three role-isolated artifacts serve the canonical public aliases. Owning routes return 200 and peer role routes return 404.",
   "roles": [
     {
       "role": "wallet",
       "project": "proof-courier-wallet",
-      "deploymentId": "dpl_7f16BBK3XYskP28Zuotsn4WgBn9x",
-      "url": "https://proof-courier-wallet-qjcf88vi0-apex-stack.vercel.app",
+      "deploymentId": "dpl_BZijQH7yLDb4BrxaHCUnhR41GkHT",
+      "url": "https://proof-courier-wallet-2pcpno59k-apex-stack.vercel.app",
       "primaryRoute": "/wallet",
       "entryChunk": "/assets/wallet-DEzR9Vas.js",
       "checks": [
@@ -21,14 +21,14 @@
         { "path": "/evidence", "status": 404 },
         { "path": "/assets/wallet-DEzR9Vas.js", "status": 200 },
         { "path": "/assets/verifier-_kQB3hyu.js", "status": 404 },
-        { "path": "/assets/showcase-DSDmBp0d.js", "status": 404 }
+        { "path": "/assets/showcase-CEEMJGOC.js", "status": 404 }
       ]
     },
     {
       "role": "verifier",
       "project": "proof-courier-verifier",
-      "deploymentId": "dpl_6L982WupkHhSQfmrUFj3zD6gQCta",
-      "url": "https://proof-courier-verifier-jeuaz6hbn-apex-stack.vercel.app",
+      "deploymentId": "dpl_CV6czpHiECuNnL92gehCvy9GtrNm",
+      "url": "https://proof-courier-verifier-d50l6bhxh-apex-stack.vercel.app",
       "primaryRoute": "/fellowship",
       "entryChunk": "/assets/verifier-_kQB3hyu.js",
       "checks": [
@@ -38,22 +38,22 @@
         { "path": "/evidence", "status": 404 },
         { "path": "/assets/verifier-_kQB3hyu.js", "status": 200 },
         { "path": "/assets/wallet-DEzR9Vas.js", "status": 404 },
-        { "path": "/assets/showcase-DSDmBp0d.js", "status": 404 }
+        { "path": "/assets/showcase-CEEMJGOC.js", "status": 404 }
       ]
     },
     {
       "role": "showcase",
       "project": "proof-courier",
-      "deploymentId": "dpl_DTo9d7BJTnW1JMHgFSraTVCXrqw5",
-      "url": "https://proof-courier-kublbofn8-apex-stack.vercel.app",
+      "deploymentId": "dpl_5b9xxkV99ro89ikXtGvbjQPQvzuh",
+      "url": "https://proof-courier-rd3woxgoo-apex-stack.vercel.app",
       "primaryRoute": "/",
-      "entryChunk": "/assets/showcase-DSDmBp0d.js",
+      "entryChunk": "/assets/showcase-CEEMJGOC.js",
       "checks": [
         { "path": "/", "status": 200 },
         { "path": "/evidence", "status": 200 },
         { "path": "/wallet", "status": 404 },
         { "path": "/fellowship", "status": 404 },
-        { "path": "/assets/showcase-DSDmBp0d.js", "status": 200 },
+        { "path": "/assets/showcase-CEEMJGOC.js", "status": 200 },
         { "path": "/assets/wallet-DEzR9Vas.js", "status": 404 },
         { "path": "/assets/verifier-_kQB3hyu.js", "status": 404 }
       ]
