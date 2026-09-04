@@ -21,7 +21,8 @@ These are supplemental checks, not certifications. The project-owned adversarial
 | Release-copy consistency | `npm run verify:copy` | public counts match machine receipts |
 | Production compilation | `npm run build` | hashed `dist` assets |
 | Production chunk content | `npm run verify:bundles` | signing fixtures confined to the wallet-named chunk; listed raw record values absent from every chunk; does not prove role-specific deployment isolation |
-| Browser journey | `npm run e2e` | six checks covering the two-origin flow, scenario lab, evidence room, rejection recovery, 390px layouts, and automated accessibility |
+| Local role artifacts | `npm run verify:roles` | 21/21 simulated-origin route and owner/peer entry-chunk checks across three independent builds, plus module/content/source-map checks, in `artifacts/release/role-builds.json` |
+| Browser journey | `npm run e2e` | ten checks: six product journeys plus four wallet reload, concurrency, and metadata-notification checks |
 | Complete receipt | `npm run verify` | `artifacts/release/verification.json` |
 
 ## Adversarial scenarios
@@ -51,4 +52,4 @@ The judge suite verifies:
 21. consent cannot be widened after approval;
 22. consent dated after verification time is rejected.
 
-The browser suite independently proves that two separate origins can complete the full journey with separate browser storage and no peer-origin fetches during the tested path, that malformed proof remains recoverable rather than creating a false success state, and that every judge-facing route has no serious or critical axe findings. It also proves same-origin wallet-grant persistence across reload, one atomic claim across two real wallet tabs, and metadata-only cross-tab refresh notification. Because both origins serve the same application artifact and both role chunks, this suite does not claim role-specific build isolation. It does not prove verifier replay consumption across reloads, processes, or application instances, or wallet synchronization across devices or browser profiles.
+The browser suite independently proves that two separate origins can complete the full journey with separate browser storage and no peer-origin fetches during the tested path, that malformed proof remains recoverable rather than creating a false success state, and that every judge-facing route has no serious or critical axe findings. It also proves same-origin wallet-grant persistence across reload, one atomic claim across two real wallet tabs, and metadata-only cross-tab refresh notification. The role-artifact suite separately proves local emitted-artifact isolation; it is a simulated deployment check, not evidence that the public Vercel origins have been cut over. The browser suite does not prove verifier replay consumption across reloads, processes, or application instances, or wallet synchronization across devices or browser profiles.

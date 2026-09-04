@@ -1,0 +1,305 @@
+{
+  "suite": "Proof Courier role artifact isolation",
+  "command": "npm run verify:roles",
+  "success": true,
+  "generatedAt": "2026-09-04T03:20:05.002Z",
+  "assertions": [
+    "Each role has an independent HTML entry and role-prefixed assets.",
+    "Build-time module graph guards reject forbidden role imports.",
+    "Wallet signing material is absent from verifier and showcase artifacts.",
+    "Raw synthetic record values are absent from every client artifact.",
+    "No source maps are emitted.",
+    "Role deployment configs preserve the required security headers and exact route tables.",
+    "Each role route and entry chunk is served only by its own simulated deployment origin."
+  ],
+  "roles": [
+    {
+      "role": "wallet",
+      "entryFile": "assets/wallet-DEzR9Vas.js",
+      "moduleSources": [
+        "../../src/walletWebmcp.ts",
+        "index.html"
+      ],
+      "deploymentConfig": {
+        "path": "vercel.wallet.json",
+        "sha256": "dab276224bc58e017fcae1207a7862e0e05331b8022e925936edecdde0bfdebf",
+        "primaryRoute": "/wallet",
+        "securityHeaders": [
+          "Content-Security-Policy",
+          "Cross-Origin-Opener-Policy",
+          "Permissions-Policy",
+          "Referrer-Policy",
+          "X-Content-Type-Options",
+          "X-Frame-Options"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "dist-roles/wallet/.vite/manifest.json",
+          "bytes": 488,
+          "sha256": "3294f5b2bdc3bcf0fec26de85d86ba41de7c8efd0e67f9fc68140f8b6f3a04c3"
+        },
+        {
+          "path": "dist-roles/wallet/assets/wallet-DEzR9Vas.js",
+          "bytes": 218084,
+          "sha256": "318919eb2cd63625a82b319c622f74baf9e369f43e0ac6b7aaf3512c62806faa"
+        },
+        {
+          "path": "dist-roles/wallet/assets/wallet-index-DXXGPZea.css",
+          "bytes": 31075,
+          "sha256": "ca43902399adf3dedf55f94af1718686dd05e5c446ddf81b1db5aa25b0527c3d"
+        },
+        {
+          "path": "dist-roles/wallet/assets/wallet-walletWebmcp-B8AcOVW1.js",
+          "bytes": 14249,
+          "sha256": "29715026d1c712d8ef1a9f2ab17146dda7f23e36f523d46b3ef4705d6ecae362"
+        },
+        {
+          "path": "dist-roles/wallet/index.html",
+          "bytes": 463,
+          "sha256": "5b4bbfbc4c772365d01f630ac505f705070f03f2550c3551e132b50be97a88b4"
+        }
+      ]
+    },
+    {
+      "role": "verifier",
+      "entryFile": "assets/verifier-_kQB3hyu.js",
+      "moduleSources": [
+        "../../src/verifierWebmcp.ts",
+        "index.html"
+      ],
+      "deploymentConfig": {
+        "path": "vercel.verifier.json",
+        "sha256": "a43fecf18734a8533891d08d9070be3a5904bf0fddff2b9c1acbdf7f22f7d22f",
+        "primaryRoute": "/fellowship",
+        "securityHeaders": [
+          "Content-Security-Policy",
+          "Cross-Origin-Opener-Policy",
+          "Permissions-Policy",
+          "Referrer-Policy",
+          "X-Content-Type-Options",
+          "X-Frame-Options"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "dist-roles/verifier/.vite/manifest.json",
+          "bytes": 504,
+          "sha256": "db44b5221e5df4a82694412ac1f01ff1180b4dbfdf514ade06aee61a10b0c79f"
+        },
+        {
+          "path": "dist-roles/verifier/assets/verifier-_kQB3hyu.js",
+          "bytes": 208600,
+          "sha256": "8b3dbab772a7cffcc87403212214726ab4f18a2e5a0a8e3ad74dcf05f1abb5cc"
+        },
+        {
+          "path": "dist-roles/verifier/assets/verifier-index-DXXGPZea.css",
+          "bytes": 31075,
+          "sha256": "ca43902399adf3dedf55f94af1718686dd05e5c446ddf81b1db5aa25b0527c3d"
+        },
+        {
+          "path": "dist-roles/verifier/assets/verifier-verifierWebmcp-CA0mzdtf.js",
+          "bytes": 16203,
+          "sha256": "6f5a469511c83b19a62018cb1fd60a41714e7fd299c538b3086609094221da20"
+        },
+        {
+          "path": "dist-roles/verifier/index.html",
+          "bytes": 469,
+          "sha256": "e4f462070ca1b58699c7b81827d6daa3a82f7e7127ecd0a80050160ba67a93b3"
+        }
+      ]
+    },
+    {
+      "role": "showcase",
+      "entryFile": "assets/showcase-IcZ0t_2m.js",
+      "moduleSources": [
+        "index.html"
+      ],
+      "deploymentConfig": {
+        "path": "vercel.showcase.json",
+        "sha256": "9e9c93d93fa3f7e4ee6f154eb307eabece089a264df2fd79e6a5035bf04150e0",
+        "primaryRoute": "/",
+        "securityHeaders": [
+          "Content-Security-Policy",
+          "Cross-Origin-Opener-Policy",
+          "Permissions-Policy",
+          "Referrer-Policy",
+          "X-Content-Type-Options",
+          "X-Frame-Options"
+        ]
+      },
+      "artifacts": [
+        {
+          "path": "dist-roles/showcase/.vite/manifest.json",
+          "bytes": 197,
+          "sha256": "1ac255f98d39690e086c1694c0df38374b370e7b1d1d4258faebbd9f8ef1d13f"
+        },
+        {
+          "path": "dist-roles/showcase/assets/showcase-IcZ0t_2m.js",
+          "bytes": 232754,
+          "sha256": "5d4fb842210dcc58883ea3820cb146ae2989e4ada2bd9a081b0bf059268f726d"
+        },
+        {
+          "path": "dist-roles/showcase/assets/showcase-index-DXXGPZea.css",
+          "bytes": 31075,
+          "sha256": "ca43902399adf3dedf55f94af1718686dd05e5c446ddf81b1db5aa25b0527c3d"
+        },
+        {
+          "path": "dist-roles/showcase/index.html",
+          "bytes": 460,
+          "sha256": "44bcddd4aac0be95bb39e1faf3db2460b9ff2cbb4aaa373aacb8b8c2bffcc91f"
+        }
+      ]
+    }
+  ],
+  "routeChecks": [
+    {
+      "role": "wallet",
+      "path": "/",
+      "expectedStatus": 302,
+      "actualStatus": 302,
+      "passed": true
+    },
+    {
+      "role": "wallet",
+      "path": "/wallet",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "passed": true
+    },
+    {
+      "role": "wallet",
+      "path": "/fellowship",
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "passed": true
+    },
+    {
+      "role": "wallet",
+      "path": "/evidence",
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "passed": true
+    },
+    {
+      "role": "verifier",
+      "path": "/",
+      "expectedStatus": 302,
+      "actualStatus": 302,
+      "passed": true
+    },
+    {
+      "role": "verifier",
+      "path": "/fellowship",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "passed": true
+    },
+    {
+      "role": "verifier",
+      "path": "/wallet",
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "passed": true
+    },
+    {
+      "role": "verifier",
+      "path": "/evidence",
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "passed": true
+    },
+    {
+      "role": "showcase",
+      "path": "/",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "passed": true
+    },
+    {
+      "role": "showcase",
+      "path": "/evidence",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "passed": true
+    },
+    {
+      "role": "showcase",
+      "path": "/wallet",
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "passed": true
+    },
+    {
+      "role": "showcase",
+      "path": "/fellowship",
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "passed": true
+    },
+    {
+      "role": "wallet",
+      "path": "/assets/wallet-DEzR9Vas.js",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "passed": true
+    },
+    {
+      "role": "verifier",
+      "path": "/assets/wallet-DEzR9Vas.js",
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "passed": true
+    },
+    {
+      "role": "showcase",
+      "path": "/assets/wallet-DEzR9Vas.js",
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "passed": true
+    },
+    {
+      "role": "verifier",
+      "path": "/assets/verifier-_kQB3hyu.js",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "passed": true
+    },
+    {
+      "role": "wallet",
+      "path": "/assets/verifier-_kQB3hyu.js",
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "passed": true
+    },
+    {
+      "role": "showcase",
+      "path": "/assets/verifier-_kQB3hyu.js",
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "passed": true
+    },
+    {
+      "role": "showcase",
+      "path": "/assets/showcase-IcZ0t_2m.js",
+      "expectedStatus": 200,
+      "actualStatus": 200,
+      "passed": true
+    },
+    {
+      "role": "wallet",
+      "path": "/assets/showcase-IcZ0t_2m.js",
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "passed": true
+    },
+    {
+      "role": "verifier",
+      "path": "/assets/showcase-IcZ0t_2m.js",
+      "expectedStatus": 404,
+      "actualStatus": 404,
+      "passed": true
+    }
+  ],
+  "failures": []
+}

@@ -26,11 +26,12 @@ import evalReceipt from '../artifacts/evals/scenario-results.json'
 import nekudaAudit from '../artifacts/evals/third-party/nekuda-wallet-audit.json'
 import webmcpSmoke from '../artifacts/evals/third-party/webmcp-smoke.json'
 import productionCrossOrigin from '../artifacts/release/production-cross-origin.json'
+import roleBuilds from '../artifacts/release/role-builds.json'
 import {
   SCHOLARSHIP_AUDIENCE,
   SCHOLARSHIP_PURPOSE,
   scholarshipRequirements,
-} from './domain/proofVerifier'
+} from './domain/proofPolicy'
 import { evaluateDisclosureRequest } from './domain/requestFirewall'
 import {
   consentToWalletDraft,
@@ -59,6 +60,7 @@ const releaseChecks = [
   { name: 'release-copy consistency', command: 'npm run verify:copy' },
   { name: 'production build', command: 'npm run build' },
   { name: 'production chunk content scan', command: 'npm run verify:bundles' },
+  { name: 'role artifact isolation', command: 'npm run verify:roles' },
   { name: 'browser checks', command: 'npm run e2e' },
 ] as const
 const nativeEvidence = {
@@ -122,7 +124,7 @@ function Brand({ context }: { context?: string }) {
   )
 }
 
-function LandingPage() {
+export function LandingPage() {
   const [scenarioKey, setScenarioKey] = useState<FirewallScenario>('overreach')
   const [copyStatus, setCopyStatus] = useState('Copy prompt')
   const scenario = firewallScenarios[scenarioKey]
@@ -254,7 +256,7 @@ function LandingPage() {
   )
 }
 
-function WalletPage() {
+export function WalletPage() {
   const [wallet, setWallet] = useState<WalletState>(createWalletState)
   const walletRef = useRef(wallet)
   const grantStoreRef = useRef<WalletGrantStore | null>(null)
@@ -495,7 +497,7 @@ function WalletPage() {
   )
 }
 
-function FellowshipPage() {
+export function FellowshipPage() {
   const [verifier, setVerifier] = useState<VerifierState>(createVerifierState)
   const [challengeStore] = useState(() => new InMemoryChallengeStore())
   const verifierRef = useRef(verifier)
@@ -601,9 +603,9 @@ function FellowshipPage() {
   )
 }
 
-function EvidencePage() {
+export function EvidencePage() {
   const livePassed = nativeEvidence.exportPassed && nativeEvidence.verificationPassed
-  const releasePassed = livePassed && evalReceipt.success
+  const releasePassed = livePassed && evalReceipt.success && roleBuilds.success
 
   return (
     <div className="site-shell evidence-page">
@@ -671,6 +673,7 @@ function EvidencePage() {
         <section className="evidence-section release-checks">
           <div className="evidence-section-heading"><div><p className="section-kicker">Release gate</p><h2>Every claim has a corresponding check.</h2></div><p>The first-party gate runs together with <code>npm run verify</code>. Independent Workbench and GoogleChromeLabs probes are supplemental rather than certifications.</p></div>
           <div className="release-check-grid">{releaseChecks.map((check) => <article key={check.name}><BadgeCheck size={18} /><div><strong>{check.name}</strong><code>{check.command}</code></div><span>passed</span></article>)}</div>
+          <div className="live-receipt-line"><BadgeCheck size={18} /><strong>Local role isolation:</strong><span>{roleBuilds.routeChecks.filter((check) => check.passed).length}/{roleBuilds.routeChecks.length} route and entry-chunk checks</span><span>production cutover pending</span><a href="https://github.com/amanmaqsood/proof-courier/blob/main/artifacts/release/role-builds.json" target="_blank">Role-build receipt <ExternalLink size={12} /></a></div>
           <div className="live-receipt-line"><BadgeCheck size={18} /><strong>Independent probes:</strong><span>{webmcpSmoke.passedSteps}/{webmcpSmoke.totalSteps} live tool steps</span><span>{nekudaAudit.score}/100 audit</span><a href={webmcpSmokeUrl} target="_blank">Smoke receipt <ExternalLink size={12} /></a><a href={workbenchAuditUrl} target="_blank">Audit receipt <ExternalLink size={12} /></a></div>
         </section>
 

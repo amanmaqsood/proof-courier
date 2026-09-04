@@ -32,7 +32,7 @@ The synthetic proof bundle uses browser Web Crypto:
 - deterministic policy rejects missing claims and over-disclosure;
 - expiry and consumed challenges reject stale or replayed presentations within the active in-memory verifier session.
 
-The wallet and verifier tool surfaces are lazily loaded as separate runtime chunks. The release gate proves that signing fixtures are confined to the wallet-named chunk and that listed raw synthetic record values appear in no production chunk. Both deployed origins currently serve the same application artifact, including both role chunks, so this is not yet role-specific build isolation.
+The legacy public build lazily loads the wallet and verifier tool surfaces as separate runtime chunks. A new local release-candidate gate produces independent wallet, verifier, and showcase artifacts; rejects forbidden role modules and content; disables source maps; and proves that peer routes and entry chunks return 404 on simulated origins. Local release-candidate builds are role-isolated, but both deployed origins still serve the shared application artifact until the production cutover and rerun are complete.
 
 The verifier checks all of these before showing a human submission control.
 
@@ -42,7 +42,7 @@ Most agent safety demos add a confirmation dialog before a powerful action. Proo
 
 ## How it was tested
 
-The repository contains 22 named adversarial scenarios covering request overreach, consent widening or future-dating, issuer trust, wrong audience or purpose, expiry, replay, missing or extra claims, tampering, and dynamic authority. 10 Playwright checks include six complete product journeys across separate wallet and verifier origins plus four wallet durability and concurrency checks. They exercise all three Request Firewall scenarios, reload and two-tab races, the evidence room and 390px layouts, malformed-proof recovery, and serious/critical accessibility scans on every judge-facing route. `npm run verify` emits machine-readable receipts. A native WebMCP run in the OpenAI Codex in-app browser tested the deployed build. In that recorded session, five synthetic claims crossed, zero private fields crossed, export disappeared after use, verification passed, and no agent submission tool appeared. The public `/evidence` route links the receipts, source revision, and limits behind each claim.
+The repository contains 22 named adversarial scenarios covering request overreach, consent widening or future-dating, issuer trust, wrong audience or purpose, expiry, replay, missing or extra claims, tampering, and dynamic authority. 10 Playwright checks include six complete product journeys across separate wallet and verifier origins plus four wallet durability and concurrency checks. They exercise all three Request Firewall scenarios, reload and two-tab races, the evidence room and 390px layouts, malformed-proof recovery, and serious/critical accessibility scans on every judge-facing route. A separate role-build matrix records 21 role-isolation outcomes across three local artifacts: 12 role routes and nine owner/peer entry-chunk responses. `npm run verify` emits machine-readable receipts. A native WebMCP run in the OpenAI Codex in-app browser tested the deployed build. In that recorded session, five synthetic claims crossed, zero private fields crossed, export disappeared after use, verification passed, and no agent submission tool appeared. The public `/evidence` route links the receipts, source revision, and limits behind each claim.
 
 ## Scope and limits
 

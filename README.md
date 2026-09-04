@@ -157,6 +157,7 @@ Every result below links to a committed machine-readable receipt.
 | Browser checks | 10/10 passed (six product journeys + four durability/concurrency checks) | [verification.json](artifacts/release/verification.json) |
 | Direct live tool smoke with GoogleChromeLabs `webmcp-evals` | 5/5 passed, 0 errors | [webmcp-smoke.json](artifacts/evals/third-party/webmcp-smoke.json) |
 | Project-run audit with Nekuda WebMCP Workbench tooling | 100/100, 0 findings | [nekuda-wallet-audit.json](artifacts/evals/third-party/nekuda-wallet-audit.json) |
+| Local role-build isolation matrix | 21/21 passed: role routes and owner/peer entry chunks | [role-builds.json](artifacts/release/role-builds.json) |
 | Deployed two-origin journey, storage boundary, and peer-fetch checks | Passed | [production-cross-origin.json](artifacts/release/production-cross-origin.json) |
 | Native WebMCP consent and capability lifecycle | Passed | [live-webmcp-verification.json](artifacts/release/live-webmcp-verification.json) |
 
@@ -170,6 +171,7 @@ The full release gate runs:
 - release-copy consistency;
 - the TypeScript and Vite production build;
 - production-chunk fixture-placement and raw-value scans;
+- three independent local role builds with module-graph, secret-content, source-map, route, and entry-chunk isolation checks;
 - ten browser checks: six product journeys covering keyboard operation, narrow viewports, the Request Firewall scenario lab, rejected-proof recovery, and automated serious/critical accessibility scans, plus four wallet durability and concurrency checks.
 
 The public [evidence room](https://proof-courier-orcin.vercel.app/evidence) turns those receipts into a judge-readable interface.
@@ -210,6 +212,7 @@ npm run verify
 | `npm run eval:webmcp` | Five direct live tool steps with GoogleChromeLabs `webmcp-evals` |
 | `npm run build` | TypeScript compilation and production Vite bundles |
 | `npm run verify:bundles` | Signing-fixture placement and raw-value absence across production chunks |
+| `npm run verify:roles` | Separate wallet, verifier, and showcase artifacts; forbidden module/content scans; simulated-origin 200/404 route and entry-chunk matrix |
 | `npm run e2e` | Ten local browser checks: six product journeys plus four wallet durability/concurrency checks |
 | `npm run e2e:production` | Canonical journey against the public wallet and verifier |
 | `npm run verify` | The complete local and CI release gate |
@@ -260,7 +263,9 @@ The verifier exposes four base tools and adds one read-only receipt tool after a
 
 The deployed wallet and verifier are separate origins. The browser suite verifies that wallet local storage is not visible to the verifier and that neither page fetches resources from the peer origin during the tested journey. Production headers configure a same-origin opener policy, deny framing, disable camera, microphone, geolocation, payment, and USB access, use no-referrer behavior, and prevent MIME sniffing.
 
-Both origins currently serve the same application artifact, including both role routes and lazily loaded role chunks. The build scan proves only that signing fixtures are confined to the wallet-named runtime chunk and that listed raw synthetic record values appear in no production chunk. It does **not** prove role-specific build isolation: the verifier origin can still serve the wallet route and wallet chunk. Separate role builds are a planned Phase 2 gate.
+Both public origins currently serve the same application artifact, including both role routes and lazily loaded role chunks. The legacy build scan proves only that signing fixtures are confined to the wallet-named runtime chunk and that listed raw synthetic record values appear in no production chunk. It does **not** prove role-specific build isolation on the deployed origins: the verifier origin can still serve the wallet route and wallet chunk.
+
+The local release candidate now emits independent wallet, verifier, and showcase artifacts. Its role gate checks the emitted module graphs and content, forbids source maps, serves each artifact on a separate loopback origin, and proves that peer routes and peer entry chunks return 404. Local role builds pass route/chunk isolation, but the public Vercel projects have not been cut over to those artifacts; production role isolation remains unproved until three deployed origins pass the same matrix.
 
 The only intended cross-site application payload is the purpose-bound proof that the agent receives from `wallet_export_proof` and supplies to `fellowship_verify_proof`.
 

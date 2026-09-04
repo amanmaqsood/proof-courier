@@ -6,6 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:wallet": "vite build --config vite.wallet.config.ts",
+    "build:verifier": "vite build --config vite.verifier.config.ts",
+    "build:showcase": "vite build --config vite.showcase.config.ts",
+    "build:roles": "tsc -b && npm run build:wallet && npm run build:verifier && npm run build:showcase",
     "test": "vitest run",
     "eval": "vitest run src/evals/proofCourier.evals.test.ts --reporter=json --outputFile=artifacts/evals/.vitest-results.json && node scripts/write-eval-receipt.mjs",
     "eval:webmcp:wallet": "webmcp-evals smoke -u http://127.0.0.1:5173/wallet -e evals/webmcp/wallet-smoke.json --chrome-channel chrome -v",
@@ -14,8 +18,9 @@
     "e2e": "playwright test",
     "e2e:production": "PLAYWRIGHT_BASE_URL=https://proof-courier-verifier.vercel.app PLAYWRIGHT_WALLET_URL=https://proof-courier-wallet.vercel.app/wallet PLAYWRIGHT_RESULTS_FILE=artifacts/e2e/production-results.json playwright test e2e/proof-courier.spec.ts -g 'human consent' && node scripts/write-production-receipt.mjs",
     "verify:bundles": "node scripts/verify-bundle-isolation.mjs",
+    "verify:roles": "npm run build:roles && node scripts/verify-role-artifacts.mjs",
     "verify:copy": "node scripts/verify-release-copy.mjs",
-    "verify": "npm run lint && npm test && npm run eval && npm run build && npm run verify:bundles && npm run e2e && npm run verify:copy && node scripts/write-verification-receipt.mjs",
+    "verify": "npm run lint && npm test && npm run eval && npm run build && npm run verify:bundles && npm run verify:roles && npm run e2e && npm run verify:copy && node scripts/write-verification-receipt.mjs",
     "test:watch": "vitest",
     "lint": "eslint ."
   },

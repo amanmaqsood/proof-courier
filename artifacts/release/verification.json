@@ -2,7 +2,7 @@
   "suite": "Proof Courier release gate",
   "command": "npm run verify",
   "success": true,
-  "generatedAt": "2026-09-04T03:09:14.168Z",
+  "generatedAt": "2026-09-04T03:20:21.396Z",
   "sourceRevision": "local-working-tree",
   "checks": [
     {
@@ -37,6 +37,12 @@
       "status": "passed"
     },
     {
+      "name": "role artifact isolation",
+      "command": "npm run verify:roles",
+      "status": "passed",
+      "total": 21
+    },
+    {
       "name": "browser checks",
       "command": "npm run e2e",
       "status": "passed",
@@ -45,9 +51,9 @@
   ],
   "buildArtifacts": [
     {
-      "path": "dist/assets/index-CViZlyZl.js",
-      "bytes": 259282,
-      "sha256": "1b34f05d25883b2fb9e0f7d44390f3cc626ef4665bb779a047eba6cc5bb95777"
+      "path": "dist/assets/index-C9Nl_IhA.js",
+      "bytes": 265560,
+      "sha256": "96a6522c98aa8512bd6fdad8a824abeb79c3937d15fa809b8cec73a70fbab9dc"
     },
     {
       "path": "dist/assets/index-DXXGPZea.css",
@@ -55,14 +61,14 @@
       "sha256": "ca43902399adf3dedf55f94af1718686dd05e5c446ddf81b1db5aa25b0527c3d"
     },
     {
-      "path": "dist/assets/verifierWebmcp-CMNiwWLs.js",
+      "path": "dist/assets/verifierWebmcp-DcQAMIyi.js",
       "bytes": 14798,
-      "sha256": "f689528181d32d35edb8d9c6f05f5221f4b80587b7d0eed46cc4aa6f25c23718"
+      "sha256": "3f983261eed401fe98320fe1643eaec41db5377b86a38968c801448a2fb17c35"
     },
     {
-      "path": "dist/assets/walletWebmcp-xC_ErEtH.js",
-      "bytes": 12779,
-      "sha256": "99573932e301f2ffb70b9d93becd51ce73a0f9a0ff3d6cc2544e734bf7da57f9"
+      "path": "dist/assets/walletWebmcp-C3geZl72.js",
+      "bytes": 12784,
+      "sha256": "5fdd693c6afb98a3d330101c98a51722095a18ddac91630a3e1ce5bb274354dd"
     },
     {
       "path": "dist/assets/webmcpRuntime-CRLWwxlW.js",
@@ -72,7 +78,7 @@
     {
       "path": "dist/index.html",
       "bytes": 634,
-      "sha256": "daceb2409f8746073cc65faf13085effdceb4e6b13026e2e3630452d207b285d"
+      "sha256": "41c45f7c0912e785b0ef685ed7d2ae04a24dea3e08ecd2389cced3935e017426"
     }
   ]
 }
