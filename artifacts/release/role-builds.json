@@ -2,7 +2,7 @@
   "suite": "Proof Courier role artifact isolation",
   "command": "npm run verify:roles",
   "success": true,
-  "generatedAt": "2026-09-04T03:20:05.002Z",
+  "generatedAt": "2026-09-04T03:29:17.533Z",
   "assertions": [
     "Each role has an independent HTML entry and role-prefixed assets.",
     "Build-time module graph guards reject forbidden role imports.",
@@ -111,7 +111,7 @@
     },
     {
       "role": "showcase",
-      "entryFile": "assets/showcase-IcZ0t_2m.js",
+      "entryFile": "assets/showcase-BJsBLbWj.js",
       "moduleSources": [
         "index.html"
       ],
@@ -132,12 +132,12 @@
         {
           "path": "dist-roles/showcase/.vite/manifest.json",
           "bytes": 197,
-          "sha256": "1ac255f98d39690e086c1694c0df38374b370e7b1d1d4258faebbd9f8ef1d13f"
+          "sha256": "a411cd911f84a03245eb0edf4294d5b92499397bb9acbe32a5f151d660c0ce1a"
         },
         {
-          "path": "dist-roles/showcase/assets/showcase-IcZ0t_2m.js",
-          "bytes": 232754,
-          "sha256": "5d4fb842210dcc58883ea3820cb146ae2989e4ada2bd9a081b0bf059268f726d"
+          "path": "dist-roles/showcase/assets/showcase-BJsBLbWj.js",
+          "bytes": 226982,
+          "sha256": "44c922ee190b512d4a7789cbf06d5190c8367c2e85ee24c6ef31f27747cc3975"
         },
         {
           "path": "dist-roles/showcase/assets/showcase-index-DXXGPZea.css",
@@ -147,7 +147,7 @@
         {
           "path": "dist-roles/showcase/index.html",
           "bytes": 460,
-          "sha256": "44bcddd4aac0be95bb39e1faf3db2460b9ff2cbb4aaa373aacb8b8c2bffcc91f"
+          "sha256": "438712b47a53ea6158fba0feee4fc446a1903350bb834f3b45a2d21214feacec"
         }
       ]
     }
@@ -281,21 +281,21 @@
     },
     {
       "role": "showcase",
-      "path": "/assets/showcase-IcZ0t_2m.js",
+      "path": "/assets/showcase-BJsBLbWj.js",
       "expectedStatus": 200,
       "actualStatus": 200,
       "passed": true
     },
     {
       "role": "wallet",
-      "path": "/assets/showcase-IcZ0t_2m.js",
+      "path": "/assets/showcase-BJsBLbWj.js",
       "expectedStatus": 404,
       "actualStatus": 404,
       "passed": true
     },
     {
       "role": "verifier",
-      "path": "/assets/showcase-IcZ0t_2m.js",
+      "path": "/assets/showcase-BJsBLbWj.js",
       "expectedStatus": 404,
       "actualStatus": 404,
       "passed": true

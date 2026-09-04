@@ -11,7 +11,7 @@ const checks = [
   ['README.md', [`${scenarioTotal} adversarial scenarios`, `${scenarioTotal} named adversarial judge scenarios`, `${roleTotal}/${roleTotal} passed`]],
   ['docs/DEVPOST_SUBMISSION.md', [`${scenarioTotal} named adversarial scenarios`, `${browserTotal} Playwright checks`, `${roleTotal} role-isolation outcomes`]],
   ['docs/EVALS.md', [`${scenarioTotal} named scenarios`, `${roleTotal}/${roleTotal} simulated-origin`]],
-  ['src/App.tsx', [`${scenarioTotal}/${scenarioTotal} attacks`, `${browserTotal}/${browserTotal} browser checks`]],
+  ['src/App.tsx', [`${scenarioTotal}/${scenarioTotal} attacks`, `${browserTotal}/${browserTotal} browser checks`, `${roleTotal}/${roleTotal} route and entry-chunk checks`]],
   ['e2e/proof-courier.spec.ts', [`${scenarioTotal}/${scenarioTotal}`, `${browserTotal}/${browserTotal}`]],
   ['README.md', ['active verifier session', 'Atomic transactions allow one claim across tested reload and cross-tab races', 'does **not** prove role-specific build isolation', 'Local role builds pass route/chunk isolation', 'public Vercel projects have not been cut over']],
   ['docs/DEVPOST_SUBMISSION.md', ['same-origin browser storage', 'verifier challenge and replay state remain in memory', 'shared application artifact', 'Local release-candidate builds are role-isolated']],
